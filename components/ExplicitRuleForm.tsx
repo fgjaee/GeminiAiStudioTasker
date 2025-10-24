@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ExplicitRule, PrimarySelector, Member, Task } from '../types';
+import { ExplicitRule, Member, Task, PrimarySelector } from '../types';
 import Input from './Input';
 import Select from './Select';
 import Button from './Button';

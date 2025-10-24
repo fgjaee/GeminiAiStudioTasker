@@ -151,41 +151,51 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
 export const importData = async (file: File): Promise<SupabaseTableData> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       try {
         const content = event.target?.result as string;
-        const parsed = JSON.parse(content);
+        const parsedData = JSON.parse(content);
 
-        // Check if it's the old backup format
-        if (parsed.dailyTasks && parsed.explicitRules && parsed.timestamp) {
-          console.log("Detected old backup format. Transforming data...");
-          const transformedData = transformOldBackupToSupabaseData(parsed as OldBackupData);
-          resolve(transformedData);
-        } else if (parsed.members && parsed.tasks && parsed.manager_settings) {
-          // Assume it's the current SupabaseTableData format
-          console.log("Detected current application data format. Normalizing...");
+        // Check if it's an old backup format (e.g., has 'dailyTasks' and 'explicitRules' arrays directly)
+        if (parsedData.dailyTasks && parsedData.explicitRules && parsedData.members) {
+          console.log('Importer: Detected old backup data format. Transforming...');
+          resolve(transformOldBackupToSupabaseData(parsedData as OldBackupData));
+        } else if (
+          parsedData.members &&
+          parsedData.tasks &&
+          parsedData.explicit_rules &&
+          parsedData.weekly_schedule &&
+          parsedData.assignments &&
+          parsedData.templates &&
+          parsedData.manager_settings &&
+          parsedData.areas &&
+          parsedData.order_sets &&
+          parsedData.order_set_items
+        ) {
+          console.log('Importer: Detected current data format. Normalizing...');
+          // Apply normalizers to ensure data consistency, especially for IDs that might be missing in older exports of new format
           const normalizedData: SupabaseTableData = {
-            members: normalizeMembers(parsed.members),
-            tasks: normalizeTasks(parsed.tasks),
-            explicit_rules: normalizeRules(parsed.explicit_rules),
-            weekly_schedule: normalizeWeeklySchedule(parsed.weekly_schedule || []),
-            assignments: normalizeAssignments(parsed.assignments || []),
-            templates: normalizeTemplates(parsed.templates || []),
-            manager_settings: normalizeManagerSettings(parsed.manager_settings),
-            areas: normalizeAreas(parsed.areas || []),
-            order_sets: normalizeOrderSets(parsed.order_sets || []),
-            order_set_items: normalizeOrderSetItems(parsed.order_set_items || []),
+            members: normalizeMembers(parsedData.members),
+            tasks: normalizeTasks(parsedData.tasks),
+            explicit_rules: normalizeRules(parsedData.explicit_rules),
+            weekly_schedule: normalizeWeeklySchedule(parsedData.weekly_schedule),
+            assignments: normalizeAssignments(parsedData.assignments),
+            templates: normalizeTemplates(parsedData.templates),
+            manager_settings: normalizeManagerSettings(parsedData.manager_settings),
+            areas: normalizeAreas(parsedData.areas),
+            order_sets: normalizeOrderSets(parsedData.order_sets),
+            order_set_items: normalizeOrderSetItems(parsedData.order_set_items),
           };
           resolve(normalizedData);
         } else {
-          reject(new Error("Unrecognized JSON data format."));
+          reject(new Error('Unrecognized data format. Please provide a valid backup JSON file.'));
         }
       } catch (e) {
-        reject(new Error(`Failed to parse or transform JSON: ${(e as Error).message}`));
+        reject(new Error(`Failed to parse JSON file: ${(e as Error).message}`));
       }
     };
-    reader.onerror = () => {
-      reject(new Error('Failed to read file.'));
+    reader.onerror = (error) => {
+      reject(new Error(`Failed to read file: ${reader.error?.message || 'Unknown error'}`));
     };
     reader.readAsText(file);
   });

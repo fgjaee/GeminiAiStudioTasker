@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { ExplicitRule, Member, Task, PrimarySelector } from '../types'; // Fix: Import PrimarySelector
+import { ExplicitRule, Member, Task, PrimarySelector } from '../types';
 import Button from './Button';
 import ExplicitRuleForm from './ExplicitRuleForm';
 import Modal from './Modal';

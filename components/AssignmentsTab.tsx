@@ -1,16 +1,14 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Assignment, DailyWorkload, Task, Member, ManagerSettings } from '../types';
 import Button from './Button';
-// Add Pencil icon to lucide-react import
 import { Lock, Unlock, Zap, XCircle, AlertTriangle, Eye, EyeOff, Calendar, Pencil } from 'lucide-react';
 import dayjs from 'dayjs';
-import { calculateDuration, minutesToTime, timeToMinutes, assertUniqueKeys } from '../utils/helpers'; // Ensure assertUniqueKeys is imported
+import { calculateDuration, minutesToTime, timeToMinutes, assertUniqueKeys } from '../utils/helpers';
 import Input from './Input';
 import Modal from './Modal';
 import Select from './Select';
-// Add import for Textarea
 import Textarea from './Textarea';
-import { getTaskDisplayName } from '../services/assignmentEngine'; // Import getTaskDisplayName
+import { getTaskDisplayName } from '../services/assignmentEngine';
 
 interface AssignmentsTabProps {
   assignments: Assignment[];

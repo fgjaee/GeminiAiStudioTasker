@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { XCircle, CheckCircle, Info } from 'lucide-react';
 import Button from './Button'; // Assuming Button is available
 
@@ -51,5 +50,59 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
   );
 };
 
-export { Toast }; // Export as named export as per App.tsx usage
-    
+// New Toast Context and Provider
+interface ToastData {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+interface ToastContextType {
+  addToast: (toast: Omit<ToastData, 'id'>) => void;
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  const addToast = useCallback((toast: Omit<ToastData, 'id'>) => {
+    const id = Date.now().toString(); // Simple unique ID
+    setToasts(prev => [...prev, { ...toast, id }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
+  // Auto-dismiss toasts after a few seconds
+  useEffect(() => {
+    if (toasts.length > 0) {
+      const timer = setTimeout(() => {
+        removeToast(toasts[0].id);
+      }, 5000); // 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [toasts, removeToast]);
+
+  return (
+    <ToastContext.Provider value={{ addToast }}>
+      {children}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col space-y-2">
+        {toasts.map(toast => (
+          <Toast key={toast.id} {...toast} onClose={() => removeToast(toast.id)} />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+};
+
+const useToast = () => {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
+};
+
+export { Toast, ToastProvider, useToast }; // Export as named export as per App.tsx usage

@@ -1,6 +1,6 @@
 // services/pdfParserMock.ts
 import { ParsedScheduleData, ParsedScheduleShift } from '../types';
-import { DATE_FORMAT } from '../constants'; // Removed PDF_MOCK_TIMEOUT from import
+import { DATE_FORMAT, PDF_MOCK_TIMEOUT } from '../constants';
 import { uuid } from '../utils/helpers';
 import dayjs from 'dayjs';
 
@@ -17,7 +17,7 @@ import dayjs from 'dayjs';
 export const parseSchedulePdfMock = async (fileChecksum: string, fileContent: string): Promise<ParsedScheduleData> => {
   console.log(`PDF Parser Mock: Simulating parsing for checksum: ${fileChecksum}`);
   // Fix: Use the constant for delay.
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network/processing delay, using hardcoded 1000ms for now
+  await new Promise(resolve => setTimeout(resolve, PDF_MOCK_TIMEOUT)); // Simulate network/processing delay
 
   // Basic mock parsing logic:
   // We'll simulate a schedule for the current week starting from a specific date

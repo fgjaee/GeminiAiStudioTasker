@@ -6,9 +6,8 @@ import Input from './Input';
 import { FileText, Download } from 'lucide-react';
 import dayjs from 'dayjs';
 import Handlebars from 'handlebars';
-import { assertUniqueKeys } from '../utils/helpers'; // Ensure assertUniqueKeys is imported
-import { getTaskDisplayName } from '../services/assignmentEngine'; // Import getTaskDisplayName
-// Fix: Import WEEKDAY_NAMES from constants
+import { assertUniqueKeys } from '../utils/helpers';
+import { getTaskDisplayName } from '../services/assignmentEngine';
 import { WEEKDAY_NAMES } from '../constants';
 
 interface ReviewTabProps {

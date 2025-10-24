@@ -1,14 +1,14 @@
 // components/ScheduleTab.tsx
 import React, { useState, useCallback, useMemo } from 'react';
-import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleData, ParsedScheduleShift, Blob } from '../types'; // Fix: Import ParsedScheduleShift
+import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleData, ParsedScheduleShift, Blob } from '../types';
 import Button from './Button';
 import Modal from './Modal';
 import Input from './Input';
 import Select from './Select';
 import { Upload, Plus, Trash2, Pencil } from 'lucide-react';
 import dayjs from 'dayjs';
-import { DATE_FORMAT, WEEKDAY_NAMES, PDF_MOCK_TIMEOUT } from '../constants'; // Fix: Import PDF_MOCK_TIMEOUT
-import { uuid, getWeekDays, assertUniqueKeys, generateChecksum } from '../utils/helpers'; // Fix: Import generateChecksum
+import { DATE_FORMAT, WEEKDAY_NAMES, PDF_MOCK_TIMEOUT } from '../constants';
+import { uuid, getWeekDays, assertUniqueKeys, generateChecksum } from '../utils/helpers';
 
 interface ScheduleTabProps {
   members: Member[];

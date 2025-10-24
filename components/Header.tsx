@@ -1,43 +1,44 @@
 import React from 'react';
-import { Zap, Calendar, Users, ClipboardList, Database, Settings, MessageSquareText, ListOrdered } from 'lucide-react'; // Added ListOrdered
+import { Home, Users, ClipboardList, Gavel, Calendar, Archive, Settings, Layout, Speech } from 'lucide-react';
 
 interface HeaderProps {
-  currentTab: string;
-  onSelectTab: (tab: string) => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentTab, onSelectTab }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
-    { id: 'assignments', label: 'Assignments', icon: Zap },
-    { id: 'review', label: 'Review', icon: MessageSquareText },
-    { id: 'schedule', label: 'Schedule', icon: Calendar },
-    { id: 'members', label: 'Members', icon: Users },
-    { id: 'tasks', label: 'Tasks', icon: ClipboardList },
-    { id: 'rules', label: 'Rules', icon: ListOrdered }, // Changed icon for rules
-    { id: 'dataArchitecture', label: 'Data Architecture', icon: Database }, // New tab with Database icon
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { name: 'Planner', icon: <Home size={18} />, key: 'planner' },
+    { name: 'Assignments', icon: <Archive size={18} />, key: 'assignments' },
+    { name: 'Members', icon: <Users size={18} />, key: 'members' },
+    { name: 'Tasks', icon: <ClipboardList size={18} />, key: 'tasks' },
+    { name: 'Rules', icon: <Gavel size={18} />, key: 'rules' },
+    { name: 'Schedule', icon: <Calendar size={18} />, key: 'schedule' },
+    { name: 'Review', icon: <Speech size={18} />, key: 'review' },
+    { name: 'Settings', icon: <Settings size={18} />, key: 'settings' },
+    { name: 'Architecture', icon: <Layout size={18} />, key: 'architecture' },
   ];
 
   return (
-    <header className="bg-card shadow-sm py-4 px-6 fixed top-0 left-0 right-0 z-10">
-      <div className="container mx-auto flex flex-wrap justify-between items-center">
-        <h1 className="text-2xl font-bold text-primary mb-4 md:mb-0">WorkList Automator</h1>
-        <nav className="flex flex-wrap space-x-2 sm:space-x-4">
-          {tabs.map((tab) => {
-            const isActive = currentTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onSelectTab(tab.id)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                  ${isActive ? 'bg-primary text-white shadow' : 'text-gray-600 hover:bg-gray-100 hover:text-primary'}
-                `}
-              >
-                <tab.icon size={18} />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            );
-          })}
+    <header className="bg-primary text-white shadow-md">
+      <div className="container mx-auto p-4 flex flex-col sm:flex-row justify-between items-center">
+        <h1 className="text-2xl font-bold mb-4 sm:mb-0">Worklist Automator</h1>
+        <nav>
+          <ul className="flex flex-wrap justify-center sm:justify-end space-x-2 sm:space-x-4">
+            {tabs.map((tab) => (
+              <li key={tab.key}>
+                <button
+                  onClick={() => onTabChange(tab.key)}
+                  className={`flex items-center px-3 py-2 rounded-md transition-colors ${
+                    activeTab === tab.key ? 'bg-blue-700 font-semibold' : 'hover:bg-blue-600'
+                  }`}
+                >
+                  {tab.icon}
+                  <span className="ml-2 hidden md:inline">{tab.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </nav>
       </div>
     </header>
