@@ -1,0 +1,5 @@
+{
+  "name": "WorkList Automator",
+  "description": "A comprehensive React application for managing produce department work lists, featuring tag-based assignment logic, schedule parsing, and data management.",
+  "requestFramePermissions": []
+}

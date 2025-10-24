@@ -1,0 +1,15 @@
+/* App.css */
+/* Minimal CSS for custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.7); /* Tailwind gray-400 with opacity */
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: rgba(229, 231, 235, 0.5); /* Tailwind gray-200 with opacity */
+}

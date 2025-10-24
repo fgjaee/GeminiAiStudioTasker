@@ -1,0 +1,47 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkList Automator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#2563eb', // A nice blue for primary actions
+              secondary: '#6b7280', // Gray for secondary elements
+              accent: '#f59e0b', // Orange for highlights
+              background: '#f8fafc', // Light gray background
+              card: '#ffffff', // White for cards/panels
+              textlight: '#e2e8f0', // Light text on dark backgrounds
+              textdark: '#1e293b', // Dark text on light backgrounds
+            }
+          }
+        }
+      }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.546.0",
+    "dayjs/": "https://aistudiocdn.com/dayjs@^1.11.18/",
+    "dayjs": "https://aistudiocdn.com/dayjs@^1.11.18",
+    "handlebars": "https://aistudiocdn.com/handlebars@^4.7.8",
+    "seedrandom": "https://aistudiocdn.com/seedrandom@^3.0.5",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0"
+  }
+}
+</script>
+</head>
+<body class="bg-background text-textdark antialiased">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
