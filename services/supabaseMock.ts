@@ -36,8 +36,8 @@ import {
   normalizeShiftTemplates,
   normalizePlannedShifts,
 } from '../utils/normalizers';
-import { uuid } from '../utils/helpers'; // Ensure uuid is imported
-import { parseSchedulePdfMock } from './pdfParserMock'; // Mock PDF parser
+import { uuid } from './utils'; // Ensure uuid is imported
+import { parseSchedulePdfMock } from './parsers/pdfMeijerKronos'; // Mock PDF parser
 
 // In-memory mock database
 let mockDatabase: SupabaseTableData = JSON.parse(JSON.stringify(initialMockData));
@@ -177,7 +177,7 @@ export const supabaseMock = {
     invoke: async <T>(functionName: string, payload: any) => {
       await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
       console.log(`Mock Functions: Invoking ${functionName} with payload`, payload);
-      if (functionName === 'parse-schedule-pdf') {
+      if (functionName === 'parse-schedule-pdf' || functionName === 'parse-schedule-pdf') {
         const result: ParsedScheduleData = await parseSchedulePdfMock(payload.fileChecksum, payload.fileContent);
         return { data: result as T, error: null };
       }

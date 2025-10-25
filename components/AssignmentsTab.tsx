@@ -3,7 +3,7 @@ import { Assignment, DailyWorkload, Task, Member, ManagerSettings, ID, WeeklySch
 import Button from './Button';
 import { Lock, Unlock, Zap, XCircle, AlertTriangle, Eye, EyeOff, Calendar, Pencil, ShieldAlert } from 'lucide-react';
 import dayjs from 'dayjs';
-import { calculateDuration, minutesToTime, timeToMinutes, assertUniqueKeys, getNextNDays } from '../utils/helpers';
+import { calculateDuration, minutesToTime, timeToMinutes, assertUniqueKeys, getNextNDays } from '../services/utils';
 import Input from './Input';
 import Modal from './Modal';
 import Select from './Select';
@@ -42,21 +42,26 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [showLockedOnly, setShowLockedOnly] = useState(false);
-  const [scheduleWarning, setScheduleWarning] = useState<string | null>(null);
-
+  
   const memberMap = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
   const taskMap = useMemo(() => new Map(tasks.map(t => [t.id, t])), [tasks]);
 
-  const handleGenerateClick = useCallback(() => {
-    const dates = getNextNDays(assignmentStartDate, numberOfDays);
+  const scheduleWarning = useMemo(() => {
+    const dates = getNextNDays(assignmentStartDate, 1); // Check only the first day for the banner
     const scheduleForFirstDay = weeklySchedule.find(d => d.date === dates[0]);
     if (!scheduleForFirstDay || scheduleForFirstDay.shifts.length === 0) {
-        setScheduleWarning(`No scheduled members for ${dates[0]}. Import a schedule or use the Planner. Generator paused.`);
+        return `No scheduled members for ${dates[0]}. Import a schedule or use the Planner. Generator paused.`;
+    }
+    return null;
+  }, [assignmentStartDate, weeklySchedule]);
+
+  const handleGenerateClick = useCallback(() => {
+    if (scheduleWarning) {
+        alert(scheduleWarning);
         return;
     }
-    setScheduleWarning(null); // Clear warning
     onGenerateAssignments(assignmentStartDate, numberOfDays);
-  }, [onGenerateAssignments, assignmentStartDate, numberOfDays, weeklySchedule]);
+  }, [onGenerateAssignments, assignmentStartDate, numberOfDays, scheduleWarning]);
 
   const getMemberName = useCallback((memberId: ID) => memberMap.get(memberId)?.name || 'N/A', [memberMap]);
   const getTaskName = useCallback((taskId: ID) => getTaskDisplayName(taskMap.get(taskId)), [taskMap]);
@@ -109,7 +114,8 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         if (!summary.has(task.id)) {
             summary.set(task.id, { task, reasons: new Set() });
         }
-        summary.get(task.id)!.reasons.add(unassignedReason);
+        const reasons = unassignedReason.split(', ');
+        reasons.forEach(reason => summary.get(task.id)!.reasons.add(reason));
     });
     return Array.from(summary.values());
   }, [unassignedTasks]);
@@ -134,7 +140,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         <div className="flex items-center space-x-2">
           <Input id="assignmentStartDate" type="date" value={assignmentStartDate} onChange={(e) => setAssignmentStartDate(e.target.value)} className="w-auto p-1 text-sm" label="Start Date"/>
           <Input id="numberOfDays" type="number" value={numberOfDays} onChange={(e) => setNumberOfDays(parseInt(e.target.value, 10))} min="1" max="14" className="w-20 p-1 text-sm" label="Days"/>
-          <Button onClick={handleGenerateClick} variant="primary" className="flex-shrink-0"><Zap size={18} className="mr-2" /> Generate Assignments</Button>
+          <Button onClick={handleGenerateClick} variant="primary" className="flex-shrink-0" disabled={!!scheduleWarning} title={scheduleWarning || 'Generate Assignments'}><Zap size={18} className="mr-2" /> Generate Assignments</Button>
           <Button variant="outline" onClick={() => setShowLockedOnly(!showLockedOnly)} title={showLockedOnly ? "Show All" : "Show Locked Only"}>{showLockedOnly ? <EyeOff size={18} /> : <Eye size={18} />}</Button>
         </div>
       </div>

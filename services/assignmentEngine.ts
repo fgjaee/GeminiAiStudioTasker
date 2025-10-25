@@ -14,7 +14,7 @@ import {
   OrderSetItem,
   RecurrenceType,
 } from '../types';
-import { calculateDuration, timeToMinutes, minutesToTime, uuid } from '../utils/helpers';
+import { calculateDuration, timeToMinutes, minutesToTime, uuid } from './utils';
 import { WEEKDAY_NAMES, SHORT_WEEKDAY_NAMES } from '../constants'; // Import WEEKDAY_NAMES
 
 // --- Input Interface for Assignment Engine ---
@@ -194,7 +194,7 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
   });
 
   let allAssignments: Assignment[] = [];
-  const unassignedTasksFinal: (Task & { unassignedReason: string })[] = [];
+  const unassignedTasksMap = new Map<string, { task: Task, reasons: Set<string> }>();
 
   // Process Locked Assignments
   const lockedAssignmentsForDay = existingAssignments.filter(a => a.locked && a.date === targetDate);
@@ -217,62 +217,71 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
     if (assignedTaskIds.has(task.id)) continue;
 
     let assigned = false;
-    let assignmentReason = 'default_assignment';
     
     const taskDuration = task.estimated_duration || 0;
     const rule = explicitRules.find(r => r.taskId === task.id && !r.exclude_day?.includes(currentDayOfWeekFull));
 
-    let candidateMembers: Member[] = [];
-    if (rule) {
-      // Logic for explicit rule assignment
-      // ... (this part can be complex, for now we simplify)
-      // This is a placeholder for full rule logic. For now, we fall through to general logic.
+    if (!unassignedTasksMap.has(task.id)) {
+        unassignedTasksMap.set(task.id, { task, reasons: new Set() });
+    }
+    const unassignedReasons = unassignedTasksMap.get(task.id)!.reasons;
+
+    // General assignment logic
+    const eligibleMembers = members.filter(member => {
+      const workload = dailyWorkloads.get(member.id);
+      if (!workload || workload.capacity <= 0) return false;
+      if ((task.skill_required || []).some(skill => !(member.strengths || []).includes(skill))) {
+          unassignedReasons.add('no_skill');
+          return false;
+      }
+      if (workload.totalDuration + taskDuration > workload.capacity + settings.overCapacityThreshold) {
+          unassignedReasons.add('capacity_full');
+          return false;
+      }
+      return true;
+    });
+
+    if (eligibleMembers.length === 0) {
+      if(unassignedReasons.size === 0) unassignedReasons.add('no_skill_or_capacity');
+      continue;
     }
 
-    if (!assigned) {
-      // General assignment logic
-      const eligibleMembers = members.filter(member => {
-        const workload = dailyWorkloads.get(member.id);
-        if (!workload || workload.capacity <= 0) return false;
-        if ((task.skill_required || []).some(skill => !(member.strengths || []).includes(skill))) return false;
-        if (workload.totalDuration + taskDuration > workload.capacity + settings.overCapacityThreshold) return false;
-        return true;
-      });
+    // Sort by lowest workload
+    eligibleMembers.sort((a, b) => (dailyWorkloads.get(a.id)!.totalDuration) - (dailyWorkloads.get(b.id)!.totalDuration));
+    
+    const neededCoverage = task.min_coverage || (task.is_must_run ? 1 : 0);
+    let assignedCoverage = 0;
 
-      if (eligibleMembers.length === 0) {
-        unassignedTasksFinal.push({ ...task, unassignedReason: 'no_skill_or_capacity' });
-        continue;
-      }
-
-      // Sort by lowest workload
-      eligibleMembers.sort((a, b) => (dailyWorkloads.get(a.id)!.totalDuration) - (dailyWorkloads.get(b.id)!.totalDuration));
-      
-      const neededCoverage = task.min_coverage || (task.is_must_run ? 1 : 0);
-      if (task.allow_multi_assign || neededCoverage > 1) {
+    if (task.allow_multi_assign || neededCoverage > 1) {
         // Handle slicing and multi-assign
         // This is a simplified placeholder for the slicing logic
+        for (const member of eligibleMembers) {
+            if (assignedCoverage >= (neededCoverage || 1)) break;
+            const workload = dailyWorkloads.get(member.id)!;
+            if (workload.totalDuration + taskDuration <= workload.capacity + settings.overCapacityThreshold) {
+                const assignment = { id: uuid(), taskId: task.id, memberId: member.id, date: targetDate, startTime: task.earliest_start, endTime: minutesToTime(timeToMinutes(task.earliest_start) + taskDuration), duration: taskDuration, reason: "Assigned by skill and workload balance (coverage).", locked: false, status: 'assigned' as AssignmentStatus };
+                allAssignments.push(assignment);
+                workload.totalDuration += taskDuration;
+                workload.assignedTasks.push(assignment);
+                assignedCoverage++;
+                assigned = true;
+            }
+        }
+    } else {
         const assignedMember = eligibleMembers[0];
         const workload = dailyWorkloads.get(assignedMember.id)!;
         const assignment = { id: uuid(), taskId: task.id, memberId: assignedMember.id, date: targetDate, startTime: task.earliest_start, endTime: minutesToTime(timeToMinutes(task.earliest_start) + taskDuration), duration: taskDuration, reason: "Assigned by skill and workload balance.", locked: false, status: 'assigned' as AssignmentStatus };
         allAssignments.push(assignment);
         workload.totalDuration += taskDuration;
         workload.assignedTasks.push(assignment);
-        assignedTaskIds.add(task.id);
         assigned = true;
-      } else {
-        const assignedMember = eligibleMembers[0];
-        const workload = dailyWorkloads.get(assignedMember.id)!;
-        const assignment = { id: uuid(), taskId: task.id, memberId: assignedMember.id, date: targetDate, startTime: task.earliest_start, endTime: minutesToTime(timeToMinutes(task.earliest_start) + taskDuration), duration: taskDuration, reason: "Assigned by skill and workload balance.", locked: false, status: 'assigned' as AssignmentStatus };
-        allAssignments.push(assignment);
-        workload.totalDuration += taskDuration;
-        workload.assignedTasks.push(assignment);
-        assignedTaskIds.add(task.id);
-        assigned = true;
-      }
     }
-
-    if (!assigned) {
-        unassignedTasksFinal.push({ ...task, unassignedReason: 'capacity_full' });
+    
+    if (assigned) {
+        assignedTaskIds.add(task.id);
+        unassignedTasksMap.delete(task.id); // Remove from unassigned if successful
+    } else if (unassignedReasons.size === 0) {
+        unassignedReasons.add('capacity_full');
     }
   }
 
@@ -286,6 +295,11 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
       });
     }
   });
+  
+  const unassignedTasksFinal = Array.from(unassignedTasksMap.values()).map(({task, reasons}) => ({
+      ...task,
+      unassignedReason: Array.from(reasons).join(', ')
+  }));
   
   console.log(`--- Assignment Engine Finished for ${targetDate} ---`);
 

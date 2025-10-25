@@ -12,7 +12,7 @@ import {
 import { supabaseMock } from './services/supabaseMock';
 import { DEFAULT_MANAGER_SETTINGS } from './constants';
 import { generateAssignmentsMock } from './services/assignmentEngine';
-import { uuid, getNextNDays, assertUniqueKeys } from './utils/helpers';
+import { uuid, getNextNDays, assertUniqueKeys } from './services/utils';
 import { importData, exportData } from './utils/importer';
 import { ToastProvider, useToast } from './components/Toast';
 import Header from './components/Header';
@@ -217,7 +217,7 @@ const AppContent: React.FC = () => {
     switch (activeTab) {
       case 'assignments': return <AssignmentsTab assignments={assignments} dailyWorkloads={dailyWorkloads} unassignedTasks={unassignedTasks} overCapacityMembers={overCapacityMembers} members={members} tasks={tasks} settings={settings} weeklySchedule={weeklySchedule} onGenerateAssignments={handleGenerateAssignments} onLockAssignment={handleLockAssignment} onSaveAssignmentChanges={handleSaveAssignmentChanges} />;
       case 'planner': return <PlannerTab members={members} areas={areas} staffingTargets={staffingTargets} availability={availability} shiftTemplates={shiftTemplates} plannedShifts={plannedShifts} conflicts={plannerConflicts} settings={settings} onSaveStaffingTarget={handleSaveStaffingTarget} onDeleteStaffingTarget={handleDeleteStaffingTarget} onSaveAvailability={handleSaveAvailability} onDeleteAvailability={handleDeleteAvailability} onSaveShiftTemplate={handleSaveShiftTemplate} onDeleteShiftTemplate={handleDeleteShiftTemplate} onSavePlannedShift={handleSavePlannedShift} onDeletePlannedShift={handleDeletePlannedShift} onDeletePlannedShiftsByDate={handleDeletePlannedShiftsByDate} onAutoFillWeek={handleAutoFillWeek} onRepairCoverage={handleRepairCoverage} onPublish={handlePublishPlannedShifts} />;
-      case 'schedule': return <ScheduleTab members={members} weeklySchedule={weeklySchedule} onSaveWeeklySchedule={handleSaveWeeklySchedule} onDeleteWeeklySchedule={handleDeleteWeeklySchedule} fetchData={fetchData} />;
+      case 'schedule': return <ScheduleTab members={members} weeklySchedule={weeklySchedule} onSaveWeeklySchedule={handleSaveWeeklySchedule} onDeleteWeeklySchedule={handleDeleteWeeklySchedule} fetchData={fetchData} onSaveMember={handleSaveMember} />;
       case 'members': return <MembersTab members={members} onSaveMember={handleSaveMember} onDeleteMember={handleDeleteMember} />;
       case 'tasks': return <TasksTab tasks={tasks} areas={areas} orderSets={orderSets} orderSetItems={orderSetItems} onSaveTask={handleSaveTask} onDeleteTask={handleDeleteTask} onSaveArea={handleSaveArea} onDeleteArea={handleDeleteArea} onSaveOrderSet={handleSaveOrderSet} onDeleteOrderSet={handleDeleteOrderSet} onSaveOrderSetItem={handleSaveOrderSetItem} onDeleteOrderSetItem={handleDeleteOrderSetItem} />;
       case 'rules': return <RulesTab explicitRules={explicitRules} members={members} tasks={tasks} onSaveRule={handleSaveRule} onDeleteRule={handleDeleteRule} />;
