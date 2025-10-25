@@ -1,156 +1,216 @@
-// services/plannerEngine.ts
-import dayjs from 'dayjs';
-import {
-  Assignment,
-  DailyWorkload,
-  Member,
-  Task,
-  ExplicitRule,
-  WeeklyScheduleDay,
-  ManagerSettings,
-} from '../types';
-import { getTaskDisplayName } from './assignmentEngine'; // Re-use existing helper
-// Fix: Import getNextNDays
-import { getNextNDays } from '../utils/helpers';
+// services/plannerService.ts
+import { PlannerConflict, PlannedShift, WeeklyScheduleDay, Member, Task, Area, StaffingTarget, Availability, ShiftTemplate, ManagerSettings, ScheduleShift, ShiftClass } from "../types";
+import { uuid } from "../utils/helpers";
+import dayjs from "dayjs";
+import isBetween from 'dayjs/plugin/isBetween';
 
-interface PlannerEngineInput {
-  planningDate: string; // YYYY-MM-DD
-  planningDays: number;
-  members: Member[];
-  tasks: Task[];
-  explicitRules: ExplicitRule[];
-  weeklySchedule: WeeklyScheduleDay[];
-  assignments: Assignment[];
-  dailyWorkloads: DailyWorkload[];
-  unassignedTasks: Task[];
-  overCapacityMembers: { memberId: string; name: string; date: string; overCapacity: number }[];
-  settings: ManagerSettings;
-  // Fix: Add availableDates to input to ensure consistency with PlannerTab
-  availableDates: string[];
+dayjs.extend(isBetween);
+
+export interface plannerEngineMockInput {
+    members: Member[];
+    tasks: Task[];
+    areas: Area[];
+    staffingTargets: StaffingTarget[];
+    availability: Availability[];
+    shiftTemplates: ShiftTemplate[];
+    plannedShifts: PlannedShift[];
+    settings: ManagerSettings;
+    targetDates: string[];
+    currentWeeklySchedule: WeeklyScheduleDay[];
 }
 
-/**
- * Generates a comprehensive prompt for the AI planner based on current application state.
- * This prompt should provide enough context for the AI to offer insights and recommendations.
- */
-export const getPlannerPrompt = (input: PlannerEngineInput): string => {
-  const {
-    planningDate,
-    planningDays,
-    members,
-    tasks,
-    explicitRules,
-    weeklySchedule,
-    assignments,
-    dailyWorkloads,
-    unassignedTasks,
-    overCapacityMembers,
-    settings,
-    // Fix: Destructure availableDates from input
-    availableDates,
-  } = input;
+export interface plannerEngineMockOutput {
+    generatedPlannedShifts: PlannedShift[];
+    conflicts: PlannerConflict[];
+    suggestions: string;
+}
 
-  let prompt = `You are an expert retail produce department manager. Your goal is to provide intelligent planning insights and recommendations based on the provided data. Analyze the team's schedule, task assignments, rules, and workload to identify potential issues, optimize efficiency, and suggest improvements for the upcoming ${planningDays} days starting on ${planningDate}.
+export const autoFillSchedule = async (input: plannerEngineMockInput): Promise<plannerEngineMockOutput> => {
+    const { members, staffingTargets, targetDates } = input;
+    const generatedPlannedShifts: PlannedShift[] = JSON.parse(JSON.stringify(input.plannedShifts));
+    
+    const workloadTracker: { [memberId: string]: { daily: { [date: string]: number }, weekly: number } } = {};
+    members.forEach(m => {
+        workloadTracker[m.id] = { daily: {}, weekly: 0 };
+    });
+    generatedPlannedShifts.forEach(shift => {
+        if (!workloadTracker[shift.member_id]) return;
+        const duration = dayjs(shift.end, 'HH:mm').diff(dayjs(shift.start, 'HH:mm'), 'minute');
+        workloadTracker[shift.member_id].daily[shift.date] = (workloadTracker[shift.member_id].daily[shift.date] || 0) + duration;
+        workloadTracker[shift.member_id].weekly += duration;
+    });
 
---- Current State Summary ---
+    const areaMap = new Map(input.areas.map(a => [a.id, a]));
 
-## Planning Horizon:
-- Start Date: ${dayjs(planningDate).format('YYYY-MM-DD (dddd)')}
-- Number of Days: ${planningDays}
+    for (const date of targetDates) {
+        const dayOfWeek = dayjs(date).format('ddd');
+        const targetsForDay = staffingTargets.filter(t => t.day === dayOfWeek).sort((a, b) => a.start.localeCompare(b.start));
 
-## Manager Settings:
-- Floor SLA Time (total min for all tasks): ${settings.floorSlaTime}
-- Over Capacity Warning Threshold (min): ${settings.overCapacityThreshold}
-- Default Assignment Start Time: ${settings.assignmentStartTime}
+        for (const target of targetsForDay) {
+            const targetStart = dayjs(target.start, 'HH:mm');
+            const targetEnd = dayjs(target.end, 'HH:mm');
+            const targetDuration = targetEnd.diff(targetStart, 'minute');
 
-## Team Members (${members.length}):
-${members.map(m => `- ${m.name} (${m.title})
-  - Role Tags: ${m.role_tags.join(', ') || 'None'}
-  - Strengths/Skills: ${m.strengths.join(', ') || 'None'}
-  - Fixed Daily Commitments (min): ${m.fixed_commitments_minutes}`).join('\n')}
+            const existingCoverage = generatedPlannedShifts.filter(s => {
+                if (s.date !== date || (s.area_id && s.area_id !== target.area_id)) return false;
+                const shiftStart = dayjs(s.start, 'HH:mm');
+                const shiftEnd = dayjs(s.end, 'HH:mm');
+                return shiftStart.isBefore(targetEnd) && shiftEnd.isAfter(targetStart);
+            }).length;
 
-## Defined Tasks (${tasks.length}):
-${tasks.map(t => `- ${getTaskDisplayName(t)} (ID: ${t.id})
-  - Description: ${t.description || 'N/A'}
-  - Required Skills: ${t.skill_required.join(', ') || 'None'}
-  - Est. Duration: ${t.estimated_duration} min
-  - Recurrence: ${t.recurrence_type} | Type: ${t.task_type}
-  - Earliest Start: ${t.earliest_start} | Due By: ${t.due_by}`).join('\n')}
+            const neededCount = target.required_count - existingCoverage;
+            if (neededCount <= 0) continue;
 
-## Explicit Assignment Rules (${explicitRules.length}):
-${explicitRules.map(rule => {
-  const task = tasks.find(t => t.id === rule.taskId);
-  const primarySelectorLabel = rule.primary_selector.mode === 'member'
-    ? members.find(m => m.id === rule.primary_selector.value)?.name || `Member ID: ${rule.primary_selector.value}`
-    : `Tag: ${rule.primary_selector.value}`;
-  const fallbackSelectorsLabels = (rule.fallback_selectors || []).map(fb =>
-    fb.mode === 'member' ? members.find(m => m.id === fb.value)?.name || `Member ID: ${fb.value}` : `Tag: ${fb.value}`
-  ).join(', ');
-  return `- Task: ${getTaskDisplayName(task)} (ID: ${rule.taskId})
-  - Primary: ${primarySelectorLabel}
-  - Fallbacks: ${fallbackSelectorsLabels || 'None'}
-  - Exclude Days: ${rule.exclude_day?.join(', ') || 'None'}
-  - Max per Member: ${rule.max_per_member_per_day === null ? 'No Limit' : rule.max_per_member_per_day}
-  - Reason Template: "${rule.reason_template}"`;
-}).join('\n')}
+            const eligibleMembers = members.filter(member => {
+                const assignedShiftsToday = generatedPlannedShifts.filter(s => s.date === date && s.member_id === member.id);
+                if (assignedShiftsToday.some(s => dayjs(s.start, 'HH:mm').isBefore(targetEnd) && dayjs(s.end, 'HH:mm').isAfter(targetStart))) return false;
 
-## Weekly Schedule (Shifts for the planning horizon):
-${availableDates.map(date => {
-  const scheduleDay = weeklySchedule.find(wsd => wsd.date === date);
-  if (!scheduleDay || scheduleDay.shifts.length === 0) {
-    return `- ${dayjs(date).format('YYYY-MM-DD (dddd)')}: No shifts scheduled.`;
-  }
-  return `- ${dayjs(date).format('YYYY-MM-DD (dddd)')}:
-    ${scheduleDay.shifts.map(shift => {
-      const member = members.find(m => m.id === shift.memberId);
-      return `  - ${member?.name || 'Unknown Member'} (${shift.start}-${shift.end}, Class: ${shift.shift_class || 'N/A'})`;
-    }).join('\n    ')}`;
-}).join('\n')}
+                const memberAvail = member.availability?.find(a => a.day === dayOfWeek);
+                if (!memberAvail || targetStart.isBefore(dayjs(memberAvail.start, 'HH:mm')) || targetEnd.isAfter(dayjs(memberAvail.end, 'HH:mm'))) return false;
 
-## Generated Assignments & Workloads (for the planning horizon):
-${availableDates.map(date => {
-  const dailyWorkloadsForDate = dailyWorkloads.filter(dw => dw.date === date);
-  if (dailyWorkloadsForDate.length === 0) {
-    return `### ${dayjs(date).format('YYYY-MM-DD (dddd)')}: No workloads generated.`;
-  }
-  return `### ${dayjs(date).format('YYYY-MM-DD (dddd)')}:
-  ${dailyWorkloadsForDate.map(dw => {
-    const member = members.find(m => m.id === dw.memberId);
-    const assignedTasks = assignments.filter(a => a.memberId === dw.memberId && a.date === date);
-    const totalShiftMinutes = dw.capacity + (member?.fixed_commitments_minutes || 0); // Re-calculate total shift for context
-    const netCapacity = dw.capacity - dw.totalDuration;
+                const currentDaily = workloadTracker[member.id].daily[date] || 0;
+                const currentWeekly = workloadTracker[member.id].weekly;
+                if (member.max_daily_minutes && (currentDaily + targetDuration > member.max_daily_minutes)) return false;
+                if (member.max_weekly_minutes && (currentWeekly + targetDuration > member.max_weekly_minutes)) return false;
 
-    return `- **${member?.name || 'Unknown Member'}**
-    - Shift Capacity: ${totalShiftMinutes} min | Workload: ${dw.totalDuration} min (Upkeep: ${dw.upkeepDuration} min)
-    - Net Capacity: ${netCapacity} min ${netCapacity < 0 ? `(${Math.abs(netCapacity)} min OVER)` : ''}
-    - Assigned Tasks:
-      ${assignedTasks.length > 0 ? assignedTasks.map(a => {
-        const task = tasks.find(t => t.id === a.taskId);
-        return `  - ${getTaskDisplayName(task)} (${a.startTime}-${a.endTime}, ${a.duration}min, Status: ${a.status}) - "${a.reason}"`;
-      }).join('\n      ') : 'None'}
-  `;
-  }).join('\n  ')}
-`;
-}).join('\n')}
+                return true;
+            });
 
-## Unassigned Tasks Identified:
-${unassignedTasks.length > 0 ? unassignedTasks.map(t => `- ${getTaskDisplayName(t)} (Est. Duration: ${t.estimated_duration} min, Due By: ${t.due_by})`).join('\n') : 'None'}
+            const scoredMembers = eligibleMembers.map(member => {
+                let score = 100;
+                const area = areaMap.get(target.area_id);
+                
+                if (area && member.strengths.includes(area.name)) score += 50;
 
-## Over-Capacity Members Flagged:
-${overCapacityMembers.length > 0 ? overCapacityMembers.map(ocm => `- ${ocm.name} on ${dayjs(ocm.date).format('MMM D')}: ${ocm.overCapacity} mins over capacity.`).join('\n') : 'None'}
+                let shiftClass: ShiftClass | undefined;
+                if (targetStart.hour() < 9) shiftClass = 'Opening';
+                else if (targetStart.hour() >= 14) shiftClass = 'Closing';
+                else shiftClass = 'Mid-Shift';
+                if (dayOfWeek === 'Sat' || dayOfWeek === 'Sun') shiftClass = 'Weekend';
 
---- Request for Analysis ---
+                if (shiftClass && member.shift_class_preference?.includes(shiftClass)) score += 30;
+                score -= (workloadTracker[member.id].weekly / 60);
 
-Based on the above information, please provide the following:
-1.  **Key Observations:** Summarize the most important insights regarding workload distribution, task coverage, and rule effectiveness for the upcoming days.
-2.  **Potential Issues & Bottlenecks:** Point out any specific days, members, or tasks that seem problematic (e.g., severe over-capacity, frequently unassigned critical tasks, skill gaps).
-3.  **Recommendations for Optimization:**
-    *   **Task/Rule Adjustments:** Suggest modifications to existing task definitions (e.g., duration, required skills) or explicit rules to improve assignment quality.
-    *   **Staffing/Scheduling Suggestions:** Provide recommendations related to shift adjustments, member strengths development, or cross-training.
-    *   **Proactive Measures:** What actions could prevent recurring issues?
-4.  **Strategic Advice:** Offer high-level strategic guidance for managing the produce department based on the observed patterns.
+                return { member, score };
+            }).sort((a, b) => b.score - a.score);
 
-Be concise, actionable, and focus on practical solutions. Use markdown formatting for readability.`;
+            const membersToAssign = scoredMembers.slice(0, neededCount).map(sm => sm.member);
 
-  return prompt;
+            for (const member of membersToAssign) {
+                generatedPlannedShifts.push({
+                    id: uuid(), member_id: member.id, day: dayOfWeek as PlannedShift['day'], date: date,
+                    start: target.start, end: target.end, area_id: target.area_id, source: 'autofill', status: 'draft',
+                    reason: `Auto-filled for ${areaMap.get(target.area_id)?.name || 'target'}.`,
+                });
+                workloadTracker[member.id].daily[date] = (workloadTracker[member.id].daily[date] || 0) + targetDuration;
+                workloadTracker[member.id].weekly += targetDuration;
+            }
+        }
+    }
+
+    const conflicts = calculatePlannerConflicts(generatedPlannedShifts, input.staffingTargets, input.members, input.targetDates);
+
+    return {
+        generatedPlannedShifts, conflicts,
+        suggestions: "Generated a schedule based on targets and preferences."
+    };
+};
+
+export const calculatePlannerConflicts = (
+    plannedShifts: PlannedShift[],
+    staffingTargets: StaffingTarget[],
+    members: Member[],
+    dates: string[]
+): PlannerConflict[] => {
+    const conflicts: PlannerConflict[] = [];
+    const memberMap = new Map(members.map(m => [m.id, m]));
+
+    for (const date of dates) {
+        const dayOfWeek = dayjs(date).format('ddd');
+        const targetsForDay = staffingTargets.filter(t => t.day === dayOfWeek);
+        const shiftsForDay = plannedShifts.filter(ps => ps.date === date);
+
+        for (const target of targetsForDay) {
+            const targetStart = dayjs(target.start, 'HH:mm');
+            const targetEnd = dayjs(target.end, 'HH:mm');
+            const actualCoverage = shiftsForDay.filter(s => {
+                if (s.area_id && s.area_id !== target.area_id) return false;
+                return dayjs(s.start, 'HH:mm').isBefore(targetEnd) && dayjs(s.end, 'HH:mm').isAfter(targetStart);
+            }).length;
+
+            if (actualCoverage < target.required_count) {
+                conflicts.push({
+                    id: uuid(), type: 'under-coverage', day: dayOfWeek as PlannerConflict['day'], date, area_id: target.area_id,
+                    timeslot: `${target.start}-${target.end}`, details: `Needed ${target.required_count}, have ${actualCoverage}.`, severity: 'medium',
+                });
+            } else if (actualCoverage > target.required_count) {
+                conflicts.push({
+                    id: uuid(), type: 'over-coverage', day: dayOfWeek as PlannerConflict['day'], date, area_id: target.area_id,
+                    timeslot: `${target.start}-${target.end}`, details: `Needed ${target.required_count}, have ${actualCoverage}.`, severity: 'low',
+                });
+            }
+        }
+    }
+
+    const workloadTracker: { [memberId: string]: { daily: { [date: string]: number }, weekly: number } } = {};
+    members.forEach(m => { workloadTracker[m.id] = { daily: {}, weekly: 0 }; });
+
+    for (const shift of plannedShifts) {
+        const member = memberMap.get(shift.member_id);
+        if (!member) continue;
+        const memberAvail = member.availability?.find(a => a.day === shift.day);
+        if (!memberAvail) {
+            conflicts.push({
+                id: uuid(), type: 'availability-violation', day: shift.day, date: shift.date, member_id: member.id,
+                details: `${member.name} has no availability for ${shift.day}.`, severity: 'high',
+            });
+        } else if (dayjs(shift.start, 'HH:mm').isBefore(dayjs(memberAvail.start, 'HH:mm')) || dayjs(shift.end, 'HH:mm').isAfter(dayjs(memberAvail.end, 'HH:mm'))) {
+            conflicts.push({
+                id: uuid(), type: 'availability-violation', day: shift.day, date: shift.date, member_id: member.id,
+                details: `Shift (${shift.start}-${shift.end}) is outside avail. (${memberAvail.start}-${memberAvail.end}).`, severity: 'high',
+            });
+        }
+        
+        const duration = dayjs(shift.end, 'HH:mm').diff(dayjs(shift.start, 'HH:mm'), 'minute');
+        if (workloadTracker[member.id]) {
+            workloadTracker[member.id].daily[shift.date] = (workloadTracker[member.id].daily[shift.date] || 0) + duration;
+            workloadTracker[member.id].weekly += duration;
+        }
+    }
+
+    for (const member of members) {
+        if (member.max_weekly_minutes && workloadTracker[member.id]?.weekly > member.max_weekly_minutes) {
+             conflicts.push({ id: uuid(), type: 'overtime-risk', day: 'All', member_id: member.id, details: `${member.name} weekly mins: ${workloadTracker[member.id].weekly}/${member.max_weekly_minutes}.`, severity: 'medium' });
+        }
+        for (const date of dates) {
+             if (member.max_daily_minutes && (workloadTracker[member.id]?.daily[date] || 0) > member.max_daily_minutes) {
+                 conflicts.push({ id: uuid(), type: 'overtime-risk', day: dayjs(date).format('ddd') as PlannerConflict['day'], date, member_id: member.id, details: `${member.name} daily mins on ${date}: ${workloadTracker[member.id].daily[date]}/${member.max_daily_minutes}.`, severity: 'medium' });
+             }
+        }
+    }
+    return conflicts;
+};
+
+export const publishPlannedShiftsMock = (
+    plannedShifts: PlannedShift[],
+    currentWeeklySchedule: WeeklyScheduleDay[],
+    datesToPublish: string[]
+): WeeklyScheduleDay[] => {
+    const publishedScheduleMap = new Map<string, WeeklyScheduleDay>();
+    currentWeeklySchedule.forEach(day => publishedScheduleMap.set(day.date, JSON.parse(JSON.stringify(day))));
+
+    for (const date of datesToPublish) {
+        const shiftsForDate = plannedShifts.filter(ps => ps.date === date && ps.status === 'draft');
+        if (shiftsForDate.length > 0) {
+            const newScheduleShifts: ScheduleShift[] = shiftsForDate.map(ps => ({ id: uuid(), memberId: ps.member_id, start: ps.start, end: ps.end, shift_class: undefined }));
+            const day = publishedScheduleMap.get(date);
+            if (day) {
+                day.shifts = newScheduleShifts;
+                day.flags = { ...day.flags, source: 'planner', timestamp: new Date().toISOString() };
+            } else {
+                publishedScheduleMap.set(date, { id: uuid(), date, shifts: newScheduleShifts, flags: { source: 'planner', timestamp: new Date().toISOString() } });
+            }
+        }
+    }
+    return Array.from(publishedScheduleMap.values());
 };

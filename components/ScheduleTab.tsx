@@ -1,30 +1,21 @@
 // components/ScheduleTab.tsx
 import React, { useState, useCallback, useMemo } from 'react';
-import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleData, ParsedScheduleShift, Blob } from '../types';
+import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleData, ParsedScheduleShift, ID, ShiftClass } from '../types';
 import Button from './Button';
 import Modal from './Modal';
 import Input from './Input';
 import Select from './Select';
 import { Upload, Plus, Trash2, Pencil } from 'lucide-react';
 import dayjs from 'dayjs';
-import { DATE_FORMAT, WEEKDAY_NAMES, PDF_MOCK_TIMEOUT } from '../constants';
-import { uuid, getWeekDays, assertUniqueKeys, generateChecksum } from '../utils/helpers';
+import { DATE_FORMAT, WEEKDAY_NAMES, SHORT_WEEKDAY_NAMES, PDF_MOCK_TIMEOUT } from '../constants';
+import { uuid, getWeekDays, assertUniqueKeys, generateChecksum, timeToMinutes } from '../utils/helpers';
+import { importSchedule } from '../services/importerService';
 
 interface ScheduleTabProps {
   members: Member[];
   weeklySchedule: WeeklyScheduleDay[];
-  onSaveWeeklySchedule: (scheduleDay: WeeklyScheduleDay) => Promise<void>;
-  onDeleteWeeklySchedule: (id: string) => Promise<void>;
-  supabaseMock: {
-    functions: {
-      invoke: <T>(functionName: string, payload: any) => Promise<{ data: T | null; error: Error | null }>;
-    };
-    storage: {
-      from: (bucketName: string) => {
-        upload: (path: string, file: File | Blob, options?: { contentType?: string }) => Promise<{ data: { path: string } | null; error: Error | null }>;
-      };
-    };
-  };
+  onSaveWeeklySchedule: (scheduleDay: WeeklyScheduleDay | WeeklyScheduleDay[]) => Promise<void>;
+  onDeleteWeeklySchedule: (id: ID) => Promise<void>;
   fetchData: () => Promise<void>; // Callback to re-fetch all data after PDF upload
 }
 
@@ -33,14 +24,14 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
   weeklySchedule,
   onSaveWeeklySchedule,
   onDeleteWeeklySchedule,
-  supabaseMock,
   fetchData,
 }) => {
-  const [isPdfUploadModalOpen, setIsPdfUploadModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isEditShiftModalOpen, setIsEditShiftModalOpen] = useState(false);
-  const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importDiagnostics, setImportDiagnostics] = useState<ParsedScheduleData['diagnostics'] | null>(null);
   const [editingScheduleDay, setEditingScheduleDay] = useState<WeeklyScheduleDay | null>(null);
   const [editingShift, setEditingShift] = useState<ScheduleShift | null>(null);
   const [editingShiftDate, setEditingShiftDate] = useState<string | null>(null);
@@ -49,112 +40,115 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
   const memberMap = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
 
   const sortedSchedule = useMemo(() => {
-    // Sort by date, then day of week (Monday first), then member name, then start time
-    return [...weeklySchedule].sort((a, b) => {
-      const dateComparison = dayjs(a.date).diff(dayjs(b.date));
-      if (dateComparison !== 0) return dateComparison;
-      // If same date, sort by member name
-      const aMemberName = a.shifts[0] ? memberMap.get(a.shifts[0].memberId)?.name || '' : '';
-      const bMemberName = b.shifts[0] ? memberMap.get(b.shifts[0].memberId)?.name || '' : '';
-      return aMemberName.localeCompare(bMemberName);
-    });
-  }, [weeklySchedule, memberMap]);
+    const groupedByDate = weeklySchedule.reduce((acc, day) => {
+        if (!acc.has(day.date)) {
+            acc.set(day.date, JSON.parse(JSON.stringify(day)));
+        } else {
+            const existingDay = acc.get(day.date)!;
+            const existingShiftIds = new Set(existingDay.shifts.map(s => s.id));
+            const newShifts = day.shifts.filter(s => !existingShiftIds.has(s.id));
+            existingDay.shifts.push(...newShifts);
+        }
+        return acc;
+    }, new Map<string, WeeklyScheduleDay>());
+
+    const finalSchedule = Array.from(groupedByDate.values());
+    
+    if (process.env.NODE_ENV !== "production") {
+      assertUniqueKeys(finalSchedule.map(sd => sd.id), "ScheduleTab.sortedSchedule");
+    }
+    
+    return finalSchedule.sort((a, b) => dayjs(a.date).diff(dayjs(b.date)));
+  }, [weeklySchedule]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedPdfFile(e.target.files[0]);
-      setUploadError(null);
+      setSelectedFile(e.target.files[0]);
+      setImportError(null);
+      setImportDiagnostics(null);
     }
   }, []);
 
-  const handleUploadPdf = useCallback(async () => {
-    if (!selectedPdfFile) {
-      setUploadError('Please select a PDF file to upload.');
+  const handleImportSchedule = useCallback(async () => {
+    if (!selectedFile) {
+      setImportError('Please select a file to upload.');
       return;
     }
 
-    setUploading(true);
-    setUploadError(null);
+    setImporting(true);
+    setImportError(null);
+    setImportDiagnostics(null);
     try {
-      // Step 1: Upload file to storage (mock)
-      const fileName = `${uuid()}-${selectedPdfFile.name}`;
-      const filePath = `schedules/${fileName}`;
-      const { data: uploadData, error: uploadErrorRes } = await supabaseMock.storage.from('schedules').upload(filePath, selectedPdfFile, {
-        contentType: 'application/pdf',
-      });
+      const { date: weekStartDate, shifts: parsedShifts, diagnostics } = await importSchedule(selectedFile);
+      const weekDates = getWeekDays(weekStartDate);
 
-      if (uploadErrorRes) throw uploadErrorRes;
-      if (!uploadData?.path) throw new Error('File upload path missing.');
-
-      // For mock, we'll directly read file content to pass to invoke,
-      // in a real scenario, the invoke function would get it from storage.
-      const fileContent = await selectedPdfFile.text(); // Assuming simple text content for mock parsing
-      // Fix: Generate fileChecksum
-      const computedFileChecksum = await generateChecksum(fileContent);
-
-      // Step 2: Invoke parsing function
-      const { data: parsedData, error: invokeError } = await supabaseMock.functions.invoke<ParsedScheduleData>('parse-schedule-pdf', {
-        fileChecksum: computedFileChecksum, // Fix: Use the computed fileChecksum
-        fileContent: fileContent, // Pass content for mock parsing
-        filePath: uploadData.path, // Pass path if parser needs to fetch from storage
-      });
-
-      if (invokeError) throw invokeError;
-      if (!parsedData) throw new Error('PDF parsing returned no data.');
-
-      // Step 3: Save parsed data to weekly_schedule table
-      const scheduleDate = parsedData.date; // The start date of the week from the parser
-
-      // Group parsed shifts by day
-      const shiftsByDate: Map<string, ParsedScheduleShift[]> = new Map();
-      parsedData.shifts.forEach(shift => {
-        // Assume parser's 'day' is like 'Mon', 'Tue'
-        const shiftDayOfWeek = dayjs().startOf('week').day(WEEKDAY_NAMES.indexOf(shift.day || 'Monday') + 1).format(DATE_FORMAT); // Map day name to date
-        if (!shiftsByDate.has(shiftDayOfWeek)) {
-          shiftsByDate.set(shiftDayOfWeek, []);
+      const existingDaysInWeek = weeklySchedule.filter(day => weekDates.includes(day.date));
+      if (existingDaysInWeek.length > 0) {
+        if (!window.confirm('Schedule data already exists for this week. Do you want to replace it? Choosing "Cancel" will merge the new shifts with existing ones.')) {
+           // Merge logic is default, replace logic would require deleting old shifts first.
+           // For now, we will merge by default.
+        } else {
+            // Replace logic: delete existing shifts for the week
+            for (const day of existingDaysInWeek) {
+                await onDeleteWeeklySchedule(day.id);
+            }
         }
-        shiftsByDate.get(shiftDayOfWeek)?.push(shift);
+      }
+
+      const shiftsByFullDate = new Map<string, ParsedScheduleShift[]>();
+      parsedShifts.forEach(shift => {
+        const dayIndex = SHORT_WEEKDAY_NAMES.indexOf(shift.day);
+        if (dayIndex === -1) return;
+        const shiftFullDate = dayjs(weekStartDate).startOf('week').day(dayIndex + 1).format(DATE_FORMAT);
+        if (!shiftsByFullDate.has(shiftFullDate)) {
+          shiftsByFullDate.set(shiftFullDate, []);
+        }
+        shiftsByFullDate.get(shiftFullDate)?.push(shift);
       });
 
-      const updatedScheduleDays: WeeklyScheduleDay[] = [];
-
-      for (const [date, shifts] of shiftsByDate.entries()) {
+      const scheduleDaysToSave: WeeklyScheduleDay[] = [];
+      for (const [date, shifts] of shiftsByFullDate.entries()) {
         const existingScheduleDay = weeklySchedule.find(s => s.date === date);
+        const existingShiftIds = new Set(existingScheduleDay?.shifts.map(s => s.id));
 
-        const newShifts: ScheduleShift[] = shifts.map(shift => ({
-          id: shift.id || uuid(),
-          memberId: shift.memberId,
-          start: shift.start,
-          end: shift.end,
-          shift_class: shift.shift_class,
-        }));
+        const newShifts: ScheduleShift[] = shifts.map(shift => {
+          const resolvedMember = members.find(m => m.name.toLowerCase() === shift.memberName.toLowerCase());
+          return {
+            id: shift.id || uuid(),
+            memberId: resolvedMember?.id || shift.memberId || uuid(),
+            start: shift.start,
+            end: shift.end,
+            shift_class: shift.shift_class,
+          };
+        }).filter(s => !existingShiftIds.has(s.id)); // Avoid duplicates on merge
 
-        const scheduleDayToSave: WeeklyScheduleDay = {
-          id: existingScheduleDay?.id || uuid(),
-          date: date,
-          shifts: existingScheduleDay ? [...existingScheduleDay.shifts, ...newShifts] : newShifts, // Merge with existing shifts
-          flags: parsedData.flags || { source: 'pdf_upload', timestamp: new Date().toISOString(), checksum: computedFileChecksum }, // Fix: Use computedFileChecksum
-        };
-        updatedScheduleDays.push(scheduleDayToSave);
+        if (newShifts.length > 0) {
+            scheduleDaysToSave.push({
+                id: existingScheduleDay?.id || uuid(),
+                date: date,
+                shifts: existingScheduleDay ? [...existingScheduleDay.shifts, ...newShifts] : newShifts,
+                flags: { source: 'file_import', timestamp: new Date().toISOString() },
+            });
+        }
       }
-
-      // Save/update all schedule days
-      for (const sd of updatedScheduleDays) {
-        await onSaveWeeklySchedule(sd);
+      
+      if (scheduleDaysToSave.length > 0) {
+        await onSaveWeeklySchedule(scheduleDaysToSave);
       }
-
-      // Re-fetch all data to ensure latest schedules are displayed
+      
       await fetchData();
-      alert('Schedule PDF uploaded and parsed successfully!');
-      setIsPdfUploadModalOpen(false);
-      setSelectedPdfFile(null);
+      setImportDiagnostics(diagnostics || null);
+      alert('Schedule imported successfully!');
+      // Keep modal open to show diagnostics
+      // setIsImportModalOpen(false); 
+      // setSelectedFile(null);
     } catch (err) {
-      console.error('Error uploading or parsing PDF:', err);
-      setUploadError(`Failed to process PDF: ${(err as Error).message}`);
+      console.error('Error importing schedule:', err);
+      setImportError(`Failed to process file: ${(err as Error).message}`);
     } finally {
-      setUploading(false);
+      setImporting(false);
     }
-  }, [selectedPdfFile, weeklySchedule, onSaveWeeklySchedule, supabaseMock, fetchData]);
+  }, [selectedFile, weeklySchedule, onSaveWeeklySchedule, onDeleteWeeklySchedule, fetchData, members]);
 
   const handleOpenEditShiftModal = useCallback((scheduleDay: WeeklyScheduleDay, shift: ScheduleShift) => {
     setEditingScheduleDay(scheduleDay);
@@ -173,70 +167,60 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
   const handleSaveEditedShift = useCallback(async () => {
     if (!editingScheduleDay || !editingShift || !editingShiftDate) return;
 
-    // Create a new ScheduleShift array with the updated shift
-    const updatedShifts = editingScheduleDay.shifts.map(s =>
-      s.id === editingShift.id ? editingShift : s
-    );
-
-    // If the date changed, we need to handle it carefully:
-    // 1. Remove from old date's schedule
-    // 2. Add to new date's schedule
-    let newScheduleDay = { ...editingScheduleDay, shifts: updatedShifts };
-
-    if (editingShiftDate !== editingScheduleDay.date) {
-      // Remove shift from its original day's schedule
-      const originalScheduleDay = weeklySchedule.find(s => s.id === editingScheduleDay.id);
-      if (originalScheduleDay) {
-        const remainingShifts = originalScheduleDay.shifts.filter(s => s.id !== editingShift.id);
-        await onSaveWeeklySchedule({ ...originalScheduleDay, shifts: remainingShifts });
-      }
-
-      // Add shift to the new target date's schedule
-      const targetScheduleDay = weeklySchedule.find(s => s.date === editingShiftDate);
-      if (targetScheduleDay) {
-        const newTargetShifts = [...targetScheduleDay.shifts, editingShift];
-        await onSaveWeeklySchedule({ ...targetScheduleDay, shifts: newTargetShifts });
-      } else {
-        // Create a new schedule day if it doesn't exist
-        const newDay: WeeklyScheduleDay = {
-          id: uuid(),
-          date: editingShiftDate,
-          shifts: [editingShift],
-          flags: { createdManually: true },
-        };
-        await onSaveWeeklySchedule(newDay);
-      }
-    } else {
-      // Same date, just update the existing schedule day
-      await onSaveWeeklySchedule(newScheduleDay);
+    if (!editingShift.memberId || !editingShift.start || !editingShift.end) {
+      alert('Please fill in all required shift fields.');
+      return;
+    }
+    if (timeToMinutes(editingShift.start) >= timeToMinutes(editingShift.end)) {
+        alert('Shift end time must be after start time.');
+        return;
     }
 
+    const dateChanged = editingShiftDate !== editingScheduleDay.date;
+    const allDaysToUpdate : WeeklyScheduleDay[] = [];
+
+    if (dateChanged) {
+      const originalDay = weeklySchedule.find(s => s.id === editingScheduleDay.id);
+      if (originalDay) {
+        const remainingShifts = originalDay.shifts.filter(s => s.id !== editingShift.id);
+        allDaysToUpdate.push({ ...originalDay, shifts: remainingShifts });
+      }
+
+      const targetDay = weeklySchedule.find(s => s.date === editingShiftDate);
+      if (targetDay) {
+        allDaysToUpdate.push({ ...targetDay, shifts: [...targetDay.shifts, editingShift] });
+      } else {
+        allDaysToUpdate.push({ id: uuid(), date: editingShiftDate, shifts: [editingShift], flags: { source: 'manual_entry' } });
+      }
+    } else {
+      const updatedShifts = editingScheduleDay.shifts.map(s => s.id === editingShift.id ? editingShift : s);
+      allDaysToUpdate.push({ ...editingScheduleDay, shifts: updatedShifts });
+    }
+    
+    await onSaveWeeklySchedule(allDaysToUpdate);
     handleCloseEditShiftModal();
-    await fetchData(); // Re-fetch to update all schedules
-  }, [editingScheduleDay, editingShift, editingShiftDate, weeklySchedule, onSaveWeeklySchedule, fetchData, handleCloseEditShiftModal]);
+  }, [editingScheduleDay, editingShift, editingShiftDate, weeklySchedule, onSaveWeeklySchedule, handleCloseEditShiftModal]);
 
 
-  const handleRemoveShift = useCallback(async (scheduleDayId: string, shiftId: string) => {
+  const handleRemoveShift = useCallback(async (scheduleDayId: ID, shiftId: ID) => {
     if (!window.confirm('Are you sure you want to remove this shift?')) return;
     const scheduleDay = weeklySchedule.find(s => s.id === scheduleDayId);
     if (scheduleDay) {
       const updatedShifts = scheduleDay.shifts.filter(s => s.id !== shiftId);
-      await onSaveWeeklySchedule({ ...scheduleDay, shifts: updatedShifts });
-      await fetchData(); // Re-fetch to update all schedules
+      if (updatedShifts.length === 0) {
+        await onDeleteWeeklySchedule(scheduleDay.id);
+      } else {
+        await onSaveWeeklySchedule({ ...scheduleDay, shifts: updatedShifts });
+      }
     }
-  }, [weeklySchedule, onSaveWeeklySchedule, fetchData]);
-
-  // Assert unique keys for sortedSchedule (dev mode only)
-  if (process.env.NODE_ENV !== "production") {
-    assertUniqueKeys(sortedSchedule.map(sd => sd.id), "ScheduleTab.sortedSchedule");
-  }
+  }, [weeklySchedule, onSaveWeeklySchedule, onDeleteWeeklySchedule]);
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-textdark">Weekly Schedules</h2>
-        <Button onClick={() => setIsPdfUploadModalOpen(true)} variant="primary">
-          <Upload size={18} className="mr-2" /> Upload Schedule PDF
+        <Button onClick={() => { setIsImportModalOpen(true); setImportDiagnostics(null); setImportError(null); setSelectedFile(null); }} variant="primary">
+          <Upload size={18} className="mr-2" /> Import Schedule
         </Button>
       </div>
 
@@ -256,12 +240,21 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
             {sortedSchedule.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                  No schedules uploaded yet.
+                  No schedules imported yet.
                 </td>
               </tr>
             ) : (
-              sortedSchedule.flatMap(scheduleDay => (
-                scheduleDay.shifts.length === 0 ? (
+              sortedSchedule.flatMap(scheduleDay => {
+                if (process.env.NODE_ENV !== "production") {
+                    assertUniqueKeys(scheduleDay.shifts.map(s => s.id), `ScheduleTab.scheduleDay.shifts for ${scheduleDay.date}`);
+                }
+                const sortedShiftsForDay = [...scheduleDay.shifts].sort((a, b) => {
+                    const memberCmp = memberMap.get(a.memberId)?.name?.localeCompare(memberMap.get(b.memberId)?.name || '') || 0;
+                    if (memberCmp !== 0) return memberCmp;
+                    return timeToMinutes(a.start) - timeToMinutes(b.start);
+                });
+
+                return sortedShiftsForDay.length === 0 ? (
                   <tr key={scheduleDay.id} className="bg-gray-50">
                     <td colSpan={6} className="px-6 py-2 text-sm font-semibold text-gray-700">
                       {dayjs(scheduleDay.date).format('dddd, MMMM D, YYYY')} (No shifts)
@@ -271,10 +264,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  scheduleDay.shifts.map((shift, idx) => (
+                  sortedShiftsForDay.map((shift, idx, arr) => (
                     <tr key={`${scheduleDay.id}-${shift.id}`} className="hover:bg-gray-50">
                       {idx === 0 && (
-                        <td rowSpan={scheduleDay.shifts.length} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-textdark border-r">
+                        <td rowSpan={arr.length} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-textdark border-r">
                           {dayjs(scheduleDay.date).format('dddd, MMMM D, YYYY')}
                           <Button variant="danger" size="sm" onClick={() => onDeleteWeeklySchedule(scheduleDay.id)} className="ml-2">
                             <Trash2 size={16} />
@@ -297,45 +290,56 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
                       </td>
                     </tr>
                   ))
-                )
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
       <Modal
-        isOpen={isPdfUploadModalOpen}
-        onClose={() => setIsPdfUploadModalOpen(false)}
-        title="Upload Schedule PDF"
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Schedule from File"
         footer={
           <>
-            <Button variant="outline" onClick={() => setIsPdfUploadModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleUploadPdf} disabled={!selectedPdfFile || uploading}>
-              {uploading ? 'Uploading...' : 'Upload & Parse'}
+            <Button variant="outline" onClick={() => setIsImportModalOpen(false)}>Close</Button>
+            <Button variant="primary" onClick={handleImportSchedule} disabled={!selectedFile || importing}>
+              {importing ? 'Importing...' : 'Import & Parse'}
             </Button>
           </>
         }
       >
         <div className="p-4">
           <Input
-            id="pdfFile"
-            label="Select PDF File"
+            id="scheduleFile"
+            label="Select Schedule File"
             type="file"
-            accept="application/pdf"
+            accept=".pdf,.csv,.xlsx"
             onChange={handleFileChange}
             required
             className="mb-4"
           />
-          {selectedPdfFile && (
-            <p className="text-sm text-gray-600 mb-2">Selected: {selectedPdfFile.name}</p>
+          {selectedFile && (
+            <p className="text-sm text-gray-600 mb-2">Selected: {selectedFile.name}</p>
           )}
-          {uploadError && (
-            <p className="text-red-500 text-sm mt-2">{uploadError}</p>
+          {importError && (
+            <p className="text-red-500 text-sm mt-2">{importError}</p>
+          )}
+          {importDiagnostics && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+              <h4 className="font-semibold mb-2">Import Diagnostics</h4>
+              <p>Rows Parsed: {importDiagnostics.rowsParsed}</p>
+              <p>Shifts Created: {importDiagnostics.shiftsCreated}</p>
+              <p>Members Resolved: {importDiagnostics.membersResolved}</p>
+              <p>Members Created: {importDiagnostics.membersCreated}</p>
+              <p>Rows Discarded: {importDiagnostics.rowsDiscarded}</p>
+              {importDiagnostics.reason && <p>Details: {importDiagnostics.reason}</p>}
+            </div>
           )}
           <p className="text-sm text-gray-500 mt-4">
-            Upload a PDF containing your weekly staff schedule. The system will attempt to extract
-            member shifts and add them to the schedule. This is a mock functionality for now.
+            Upload a PDF, CSV, or XLSX file containing your weekly staff schedule. The system will attempt to extract
+            member shifts and add them to the schedule. This is a mock functionality.
           </p>
         </div>
       </Modal>
@@ -389,7 +393,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
             label="Shift Class (e.g., Opening, Mid-Shift, Closing)"
             type="text"
             value={editingShift.shift_class || ''}
-            onChange={(e) => setEditingShift(prev => prev ? { ...prev, shift_class: e.target.value } : null)}
+            onChange={(e) => setEditingShift(prev => prev ? { ...prev, shift_class: e.target.value as ShiftClass } : null)}
           />
         </Modal>
       )}

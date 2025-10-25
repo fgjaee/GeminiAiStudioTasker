@@ -4,6 +4,7 @@ import Input from './Input';
 import Textarea from './Textarea';
 import Select from './Select';
 import Button from './Button';
+import ChipInput from './ChipInput'; // Import ChipInput
 import { uuid } from '../utils/helpers'; // Ensure uuid is imported
 
 interface TaskFormProps {
@@ -14,14 +15,14 @@ interface TaskFormProps {
   areas: Area[]; // For areaId select
 }
 
-const recurrenceTypeOptions = [
+const recurrenceTypeOptions: { value: RecurrenceType; label: string }[] = [
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
   { value: 'monthly', label: 'Monthly' },
   { value: 'one-time', label: 'One-Time' },
 ];
 
-const taskTypeOptions = [
+const taskTypeOptions: { value: TaskType; label: string }[] = [
   { value: 'standard', label: 'Standard' },
   { value: 'upkeep', label: 'Upkeep (Doesn\'t count towards workload)' },
   { value: 'project', label: 'Project' },
@@ -42,6 +43,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
     task_type: 'standard',
     allow_multi_assign: true,
     areaId: undefined,
+    is_must_run: false,
+    min_coverage: 0,
   });
   const [codeError, setCodeError] = useState<string | null>(null);
 
@@ -63,13 +66,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
         task_type: 'standard',
         allow_multi_assign: true,
         areaId: undefined,
+        is_must_run: false,
+        min_coverage: 0,
       });
     }
     setCodeError(null); // Clear error on task change
   }, [task]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { id, value, type, checked } = e.target as HTMLInputElement;
+    const { id, value, type } = e.target as HTMLInputElement;
+    const isCheckbox = type === 'checkbox';
+    const checked = isCheckbox ? (e.target as HTMLInputElement).checked : false;
 
     if (id === 'code') {
       const isUnique = existingTasks.every(
@@ -84,7 +91,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
 
     setFormData(prev => ({
       ...prev,
-      [id]: type === 'checkbox' ? checked : (type === 'number' ? parseFloat(value) || 0 : value),
+      [id]: isCheckbox ? checked : (type === 'number' ? parseFloat(value) || 0 : value),
     }));
   }, [formData.id, existingTasks]);
 
@@ -104,6 +111,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
     if (codeError) {
       alert(codeError);
       return;
+    }
+    if (!formData.name.trim()) {
+        alert('Task Name is required.');
+        return;
+    }
+    if (!formData.code.trim()) {
+        alert('Task Code is required.');
+        return;
     }
     onSave(formData);
   }, [formData, onSave, codeError]);
@@ -131,17 +146,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
       <Textarea
         id="description"
         label="Description"
-        value={formData.description}
+        value={formData.description || ''}
         onChange={handleChange}
       />
-      {/* <ChipInput
+      <ChipInput
         id="skill_required"
         label="Required Skills (e.g., Ordering, Lifting)"
         chips={formData.skill_required}
         onAddChip={chip => handleSkillChange([...formData.skill_required, chip])}
         onRemoveChip={chip => handleSkillChange(formData.skill_required.filter(s => s !== chip))}
         placeholder="Add a skill..."
-      /> */}
+      />
       <Select
         id="areaId"
         label="Area (Optional)"
@@ -215,6 +230,31 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
           If checked, multiple team members can be assigned to this task.
         </span>
       </div>
+       <div className="mb-4">
+        <label htmlFor="is_must_run" className="block text-sm font-medium text-textdark mb-1">
+          Must Run Task
+        </label>
+        <input
+          id="is_must_run"
+          name="is_must_run"
+          type="checkbox"
+          checked={formData.is_must_run || false}
+          onChange={handleChange}
+          className="mt-1 h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+        />
+        <span className="ml-2 text-sm text-gray-600">
+          If checked, the engine will highly prioritize assigning this task.
+        </span>
+      </div>
+      <Input
+        id="min_coverage"
+        label="Minimum Coverage (number of members)"
+        type="number"
+        value={formData.min_coverage || 0}
+        onChange={handleChange}
+        min="0"
+      />
+
 
       <div className="flex justify-end space-x-2 mt-4">
         <Button type="button" variant="outline" onClick={onCancel}>

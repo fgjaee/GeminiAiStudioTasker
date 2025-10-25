@@ -1,219 +1,245 @@
 // services/supabaseMock.ts
 import {
+  SupabaseTableData,
+  SupabaseTableName,
   Member,
   Task,
   ExplicitRule,
   WeeklyScheduleDay,
   Assignment,
-  ManagerSettings,
   Template,
+  ManagerSettings,
+  ParsedScheduleData,
   Area,
   OrderSet,
   OrderSetItem,
-  SupabaseTableData,
-  ParsedScheduleData,
-  Blob,
+  StaffingTarget,
+  Availability,
+  ShiftTemplate,
+  PlannedShift,
+  ID, // FIX: Import ID type
 } from '../types';
-import { generateChecksum } from '../utils/helpers';
-import { parseSchedulePdfMock } from './pdfParserMock'; // Import the mock PDF parser
-import dayjs from 'dayjs';
+import { initialMockData, MOCK_DB_DELAY } from '../constants';
+import {
+  normalizeMembers,
+  normalizeTasks,
+  normalizeRules,
+  normalizeWeeklySchedule,
+  normalizeAssignments,
+  normalizeTemplates,
+  normalizeManagerSettings,
+  normalizeAreas,
+  normalizeOrderSets,
+  normalizeOrderSetItems,
+  normalizeStaffingTargets,
+  normalizeAvailability,
+  normalizeShiftTemplates,
+  normalizePlannedShifts,
+} from '../utils/normalizers';
+import { uuid } from '../utils/helpers'; // Ensure uuid is imported
+import { parseSchedulePdfMock } from './pdfParserMock'; // Mock PDF parser
 
-// In-memory data store for the mock
-let mockData: SupabaseTableData = {
-  members: [],
-  tasks: [],
-  explicit_rules: [],
-  weekly_schedule: [],
-  assignments: [],
-  templates: [],
-  manager_settings: [],
-  areas: [],
-  order_sets: [],
-  order_set_items: [],
+// In-memory mock database
+let mockDatabase: SupabaseTableData = JSON.parse(JSON.stringify(initialMockData));
+
+// Apply normalizers to initial data to ensure all IDs are present
+mockDatabase = {
+  members: normalizeMembers(mockDatabase.members),
+  tasks: normalizeTasks(mockDatabase.tasks),
+  explicit_rules: normalizeRules(mockDatabase.explicit_rules),
+  weekly_schedule: normalizeWeeklySchedule(mockDatabase.weekly_schedule),
+  assignments: normalizeAssignments(mockDatabase.assignments),
+  templates: normalizeTemplates(mockDatabase.templates),
+  manager_settings: normalizeManagerSettings(mockDatabase.manager_settings),
+  areas: normalizeAreas(mockDatabase.areas),
+  order_sets: normalizeOrderSets(mockDatabase.order_sets),
+  order_set_items: normalizeOrderSetItems(mockDatabase.order_set_items),
+  staffing_targets: normalizeStaffingTargets(mockDatabase.staffing_targets),
+  availability: normalizeAvailability(mockDatabase.availability),
+  shift_templates: normalizeShiftTemplates(mockDatabase.shift_templates),
+  planned_shifts: normalizePlannedShifts(mockDatabase.planned_shifts),
 };
 
-// Function to initialize or reset mock data with a sample
-export const initializeMockData = (data?: SupabaseTableData) => {
-  if (data) {
-    mockData = JSON.parse(JSON.stringify(data)); // Deep copy
-  } else {
-    // Default sample data if none provided
-    mockData = {
-      members: [
-        { id: 'mem-1', name: 'Alice', title: 'Produce Lead', role_tags: ['Lead', 'Produce'], strengths: ['Ordering', 'Merchandising'], fixed_commitments_minutes: 60, default_tasks: [] },
-        { id: 'mem-2', name: 'Bob', title: 'Produce Clerk', role_tags: ['Clerk', 'Produce'], strengths: ['Stocking', 'Customer Service'], fixed_commitments_minutes: 30, default_tasks: [] },
-        { id: 'mem-3', name: 'Charlie', title: 'Produce Clerk', role_tags: ['Clerk', 'Produce'], strengths: ['Receiving', 'Cleaning'], fixed_commitments_minutes: 0, default_tasks: [] },
-      ],
-      tasks: [
-        { id: 'task-1', code: 'TROP', name: 'Tropical Table', description: 'Stock tropical fruit table', skill_required: ['Merchandising'], priority_weight: 10, earliest_start: '07:00', due_by: '09:00', estimated_duration: 30, recurrence_type: 'daily', task_type: 'standard', allow_multi_assign: false, areaId: 'area-1' },
-        { id: 'task-2', code: 'WIP', name: 'Wipe Down Shelves', description: 'Clean produce shelving units', skill_required: ['Cleaning'], priority_weight: 90, earliest_start: '16:00', due_by: 'EOD', estimated_duration: 15, recurrence_type: 'daily', task_type: 'upkeep', allow_multi_assign: true, areaId: 'area-2' },
-        { id: 'task-3', code: 'ORDER', name: 'Place Produce Order', description: 'Order produce for next day', skill_required: ['Ordering', 'Lead'], priority_weight: 5, earliest_start: '08:00', due_by: '10:00', estimated_duration: 60, recurrence_type: 'daily', task_type: 'standard', allow_multi_assign: false, areaId: 'area-1' },
-        { id: 'task-4', code: 'REC', name: 'Receive Truck', description: 'Unload and process produce truck', skill_required: ['Receiving'], priority_weight: 20, earliest_start: '06:00', due_by: '08:00', estimated_duration: 90, recurrence_type: 'daily', task_type: 'standard', allow_multi_assign: true, areaId: 'area-3' },
-      ],
-      explicit_rules: [
-        {
-          id: 'rule-1', taskId: 'task-3', primary_selector: { id: 'sel-1', mode: 'tag', value: 'Lead' }, reason_template: 'Assigned to Lead for ordering.',
-          fallback_selectors: [{ id: 'sel-2', mode: 'tag', value: 'Produce' }],
-          earliest_start: '08:30', due_by: '10:30',
-        },
-      ],
-      weekly_schedule: [
-        { id: 'ws-1', date: dayjs().format('YYYY-MM-DD'), shifts: [{ id: 'shift-1-1', memberId: 'mem-1', start: '07:00', end: '15:00', shift_class: 'Opening' }, { id: 'shift-1-2', memberId: 'mem-2', start: '09:00', end: '17:00', shift_class: 'Mid-Shift' }] },
-        { id: 'ws-2', date: dayjs().add(1, 'day').format('YYYY-MM-DD'), shifts: [{ id: 'shift-2-1', memberId: 'mem-1', start: '08:00', end: '16:00', shift_class: 'Opening' }, { id: 'shift-2-2', memberId: 'mem-3', start: '14:00', end: '22:00', shift_class: 'Closing' }] },
-      ],
-      assignments: [],
-      templates: [
-        {
-          id: 'tmpl-1',
-          name: 'Standard Daily Worklist',
-          content: `## Worklist for {{date}}
 
-### Store: {{store}}
-### Department: {{department}}
-### Floor SLA Time: {{floorSlaTime}} minutes
+// --- Helper to deep clone data (to prevent direct mutation of mockDatabase state) ---
+const deepClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
-| Member           | Task             | Duration | Start | End | Reason                    |
-|------------------|------------------|----------|-------|-----|---------------------------|
-{{#each assignmentsByMember}}
-| **{{this.memberName}}** | | | | | |
-{{#each this.tasks}}
-| | {{this.taskName}} | {{this.duration}} mins | {{this.startTime}} | {{this.endTime}} | {{this.reason}} |
-{{/each}}
-| | **Total Workload:** | **{{this.totalDuration}} mins** | | | |
-{{/each}}
-
-{{#if unassignedTasks.length}}
-### Unassigned Tasks:
-{{#each unassignedTasks}}
-*   {{this.taskName}} ({{this.duration}} mins) - Due by: {{this.dueBy}}
-{{/each}}
-{{/if}}
-
-{{#if overCapacityMembers.length}}
-### Over-Capacity Members:
-{{#each overCapacityMembers}}
-*   {{this.memberName}}: {{this.overCapacity}} mins over capacity
-{{/each}}
-{{/if}}
-`,
-        },
-      ],
-      manager_settings: [
-        { id: 'settings-1', floorSlaTime: 240, tieBreakSeed: 12345, overCapacityThreshold: 30, assignmentStartTime: '07:00' }
-      ],
-      areas: [
-        { id: 'area-1', name: 'Sales Floor' },
-        { id: 'area-2', name: 'Back Room' },
-        { id: 'area-3', name: 'Receiving' },
-      ],
-      order_sets: [],
-      order_set_items: [],
-    };
-  }
-  console.log('Supabase Mock: Data initialized.', mockData);
-};
-
-// Initialize with sample data on load
-initializeMockData();
-
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
+// --- Mock Supabase Client ---
 export const supabaseMock = {
+  // Mock Auth Service
   auth: {
-    signIn: async (credentials: any) => {
-      await delay(200);
-      console.log('Supabase Mock: Sign in attempt.', credentials);
-      if (credentials.email === 'user@example.com' && credentials.password === 'password') {
-        return { data: { user: { id: 'mock-user-1', email: 'user@example.com' } }, error: null };
-      }
-      return { data: null, error: new Error('Invalid credentials') };
+    signIn: async () => {
+      await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+      console.log("Mock Auth: Signed in");
+      return { data: { user: { id: 'mock-user', email: 'user@example.com' } }, error: null };
     },
     signOut: async () => {
-      await delay(100);
-      console.log('Supabase Mock: Sign out.');
+      await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+      console.log("Mock Auth: Signed out");
       return { error: null };
     },
-    getSession: async () => {
-      await delay(50);
-      // Always return a session for simplicity in mock, or null if no user logged in
-      return { data: { session: { user: { id: 'mock-user-1', email: 'user@example.com' } } }, error: null };
-    }
   },
-  from: <T>(tableName: keyof SupabaseTableData) => ({
-    select: async (): Promise<{ data: T[] | null; error: Error | null }> => {
-      await delay(100);
-      console.log(`Supabase Mock: Selecting from ${tableName}`);
-      const data = mockData[tableName] as T[];
-      return { data: JSON.parse(JSON.stringify(data)), error: null }; // Return a deep copy
-    },
-    // Fix: Add explicit type for records to include 'id: string'
-    upsert: async (records: (T & { id: string })[]): Promise<{ data: T[] | null; error: Error | null }> => {
-      await delay(150);
-      console.log(`Supabase Mock: Upserting into ${tableName}`, records);
-      const currentRecords = mockData[tableName] as (T & { id: string })[];
-      const upsertedRecords: T[] = [];
 
-      for (const record of records) {
-        const index = currentRecords.findIndex(r => r.id === record.id);
-        if (index !== -1) {
-          currentRecords[index] = record; // Update existing
-        } else {
-          currentRecords.push(record); // Insert new
+  // Mock Database Service
+  from: <T extends { id: ID }>(tableName: SupabaseTableName) => {
+    return {
+      select: async () => {
+        await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+        console.log(`Mock DB: Selecting from ${tableName}`);
+        const data = deepClone(mockDatabase[tableName]);
+        let normalizedData: T[] = [];
+        switch (tableName) {
+          case 'members': normalizedData = normalizeMembers(data as Member[]) as unknown as T[]; break;
+          case 'tasks': normalizedData = normalizeTasks(data as Task[]) as unknown as T[]; break;
+          case 'explicit_rules': normalizedData = normalizeRules(data as ExplicitRule[]) as unknown as T[]; break;
+          case 'weekly_schedule': normalizedData = normalizeWeeklySchedule(data as WeeklyScheduleDay[]) as unknown as T[]; break;
+          case 'assignments': normalizedData = normalizeAssignments(data as Assignment[]) as unknown as T[]; break;
+          case 'templates': normalizedData = normalizeTemplates(data as Template[]) as unknown as T[]; break;
+          case 'manager_settings': normalizedData = normalizeManagerSettings(data as ManagerSettings[]) as unknown as T[]; break;
+          case 'areas': normalizedData = normalizeAreas(data as Area[]) as unknown as T[]; break;
+          case 'order_sets': normalizedData = normalizeOrderSets(data as OrderSet[]) as unknown as T[]; break;
+          case 'order_set_items': normalizedData = normalizeOrderSetItems(data as OrderSetItem[]) as unknown as T[]; break;
+          case 'staffing_targets': normalizedData = normalizeStaffingTargets(data as StaffingTarget[]) as unknown as T[]; break;
+          case 'availability': normalizedData = normalizeAvailability(data as Availability[]) as unknown as T[]; break;
+          case 'shift_templates': normalizedData = normalizeShiftTemplates(data as ShiftTemplate[]) as unknown as T[]; break;
+          case 'planned_shifts': normalizedData = normalizePlannedShifts(data as PlannedShift[]) as unknown as T[]; break;
+          default:
+            console.warn(`Mock DB: Unknown table ${tableName}`);
+            // FIX: Cast through unknown to satisfy the generic type T[].
+            normalizedData = data as unknown as T[]; // Fallback
+            break;
         }
-        upsertedRecords.push(record);
-      }
-      mockData = { ...mockData, [tableName]: currentRecords };
-      return { data: JSON.parse(JSON.stringify(upsertedRecords)), error: null };
-    },
-    // Fix: Add explicit type for deleted record to include 'id: string'
-    delete: async (id: string): Promise<{ data: (T & { id: string }) | null; error: Error | null }> => {
-      await delay(150);
-      console.log(`Supabase Mock: Deleting from ${tableName} with id: ${id}`);
-      let deletedRecord: (T & { id: string }) | null = null;
-      const currentRecords = mockData[tableName] as (T & { id: string })[];
-      const initialLength = currentRecords.length;
-      mockData = {
-        ...mockData,
-        [tableName]: currentRecords.filter(record => {
-          if (record.id === id) {
-            deletedRecord = record;
-            return false;
+        return { data: normalizedData, error: null };
+      },
+      upsert: async (records: T | T[]) => {
+        await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+        const recordsArray = Array.isArray(records) ? records : [records];
+        console.log(`Mock DB: Upserting into ${tableName}`, recordsArray);
+
+        recordsArray.forEach(record => {
+          if (!record.id) {
+            record.id = uuid(); // Assign ID if new
           }
-          return true;
-        })
-      };
-      if (currentRecords.length < initialLength) {
-        return { data: deletedRecord, error: null };
-      }
-      return { data: null, error: new Error(`Record with id ${id} not found in ${tableName}`) };
-    },
-  }),
-  functions: {
-    invoke: async <T>(functionName: string, payload: any): Promise<{ data: T | null; error: Error | null }> => {
-      await delay(200); // Simulate network latency
-      console.log(`Supabase Mock: Invoking function "${functionName}" with payload:`, payload);
-      if (functionName === 'parse-schedule-pdf') {
-        try {
-          // The mock PDF parser directly uses fileChecksum and fileContent from payload
-          const parsedData = await parseSchedulePdfMock(payload.fileChecksum, payload.fileContent);
-          return { data: parsedData as T, error: null };
-        } catch (err) {
-          console.error('Supabase Mock: Error in parse-schedule-pdf mock', err);
-          return { data: null, error: err as Error };
+
+          // Apply normalization before storing to ensure consistency
+          let normalizedRecord: T;
+          // FIX: Cast the generic `record` through `unknown` to the specific type for normalization.
+          switch (tableName) {
+            case 'members': normalizedRecord = normalizeMembers([record as unknown as Member])[0] as unknown as T; break;
+            case 'tasks': normalizedRecord = normalizeTasks([record as unknown as Task])[0] as unknown as T; break;
+            case 'explicit_rules': normalizedRecord = normalizeRules([record as unknown as ExplicitRule])[0] as unknown as T; break;
+            case 'weekly_schedule': normalizedRecord = normalizeWeeklySchedule([record as unknown as WeeklyScheduleDay])[0] as unknown as T; break;
+            case 'assignments': normalizedRecord = normalizeAssignments([record as unknown as Assignment])[0] as unknown as T; break;
+            case 'templates': normalizedRecord = normalizeTemplates([record as unknown as Template])[0] as unknown as T; break;
+            case 'manager_settings': normalizedRecord = normalizeManagerSettings([record as unknown as ManagerSettings])[0] as unknown as T; break;
+            case 'areas': normalizedRecord = normalizeAreas([record as unknown as Area])[0] as unknown as T; break;
+            case 'order_sets': normalizedRecord = normalizeOrderSets([record as unknown as OrderSet])[0] as unknown as T; break;
+            case 'order_set_items': normalizedRecord = normalizeOrderSetItems([record as unknown as OrderSetItem])[0] as unknown as T; break;
+            case 'staffing_targets': normalizedRecord = normalizeStaffingTargets([record as unknown as StaffingTarget])[0] as unknown as T; break;
+            case 'availability': normalizedRecord = normalizeAvailability([record as unknown as Availability])[0] as unknown as T; break;
+            case 'shift_templates': normalizedRecord = normalizeShiftTemplates([record as unknown as ShiftTemplate])[0] as unknown as T; break;
+            case 'planned_shifts': normalizedRecord = normalizePlannedShifts([record as unknown as PlannedShift])[0] as unknown as T; break;
+            default: normalizedRecord = record; break;
+          }
+
+          // FIX: Cast mockDatabase[tableName] to `any` to allow indexing and modification.
+          const table = mockDatabase[tableName] as any[];
+          const index = table.findIndex((r: { id: string }) => r.id === normalizedRecord.id);
+
+          if (index > -1) {
+            // Update existing record
+            table[index] = normalizedRecord;
+          } else {
+            // Insert new record
+            table.push(normalizedRecord);
+          }
+        });
+        // FIX: Cast recordsArray through unknown to satisfy return type T[].
+        return { data: recordsArray as unknown as T[], error: null };
+      },
+      delete: async (id: ID) => {
+        await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+        console.log(`Mock DB: Deleting from ${tableName} with ID ${id}`);
+        const initialLength = mockDatabase[tableName].length;
+        // FIX: Cast mockDatabase[tableName] to `any[]` to allow filtering on a union type.
+        (mockDatabase[tableName] as any) = (mockDatabase[tableName] as any[]).filter((r: any) => r.id !== id);
+
+        if (mockDatabase[tableName].length < initialLength) {
+          return { data: { id }, error: null };
         }
+        return { data: null, error: new Error(`Record with ID ${id} not found in ${tableName}`) };
+      },
+    };
+  },
+
+  // Mock Functions Service
+  functions: {
+    invoke: async <T>(functionName: string, payload: any) => {
+      await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+      console.log(`Mock Functions: Invoking ${functionName} with payload`, payload);
+      if (functionName === 'parse-schedule-pdf') {
+        const result: ParsedScheduleData = await parseSchedulePdfMock(payload.fileChecksum, payload.fileContent);
+        return { data: result as T, error: null };
       }
-      return { data: null, error: new Error(`Unknown function: ${functionName}`) };
+      if (functionName === 'planner-auto-fill' || functionName === 'planner-repair-coverage' || functionName === 'planner-suggest-plan') {
+        // This is where Gemini API would be called. For mock, return structured data.
+        console.log("Mock Functions: Simulating planner AI call.");
+        return { data: { suggestions: "AI suggests a balanced schedule considering all constraints. Here's a draft." } as T, error: null };
+      }
+      return { data: null, error: new Error('Mock Function not found') };
     },
   },
+
+  // Mock Storage Service
   storage: {
-    from: (bucketName: string) => ({
-      upload: async (path: string, file: File | Blob, options?: { contentType?: string }): Promise<{ data: { path: string } | null; error: Error | null }> => {
-        await delay(300); // Simulate upload time
-        console.log(`Supabase Mock: Uploading to bucket "${bucketName}" at path "${path}"`, file);
-        // In a real scenario, you'd store the file. Here, we just return success.
-        return { data: { path }, error: null };
-      },
-      // You might add download/remove methods here if needed
-    }),
+    from: (bucketName: string) => {
+      return {
+        upload: async (path: string, file: File | Blob, options?: { contentType?: string }) => {
+          await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+          console.log(`Mock Storage: Uploading to bucket ${bucketName} at ${path}`);
+
+          // Simulate file content storage, not actually storing it.
+          // For a real app, 'file' would be streamed/converted
+          const fileContent = (file as File).name; // Using name for mock representation
+
+          return { data: { path: path, id: uuid(), content: fileContent }, error: null };
+        },
+        download: async (path: string) => {
+          await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+          console.log(`Mock Storage: Downloading from bucket at ${path}`);
+          // Simulate download for a file that was "uploaded"
+          if (path.includes('schedules/')) {
+            // Return a mock Blob or Buffer. For simplicity, return a string or base664 placeholder.
+            const mockPdfContent = "base64encodedmockpdfcontent";
+            const mockBlob = new Blob([mockPdfContent], { type: 'application/pdf' });
+            return { data: mockBlob, error: null };
+          }
+          return { data: null, error: new Error('Mock file not found') };
+        },
+      };
+    },
+  },
+
+  // Internal method to reset mock database (for import/clear data)
+  _reset: (data: SupabaseTableData = initialMockData) => {
+    mockDatabase = deepClone(data);
+    // Apply normalizers to ensure all IDs are present for imported/reset data
+    mockDatabase = {
+      members: normalizeMembers(mockDatabase.members),
+      tasks: normalizeTasks(mockDatabase.tasks),
+      explicit_rules: normalizeRules(mockDatabase.explicit_rules),
+      weekly_schedule: normalizeWeeklySchedule(mockDatabase.weekly_schedule),
+      assignments: normalizeAssignments(mockDatabase.assignments),
+      templates: normalizeTemplates(mockDatabase.templates),
+      manager_settings: normalizeManagerSettings(mockDatabase.manager_settings),
+      areas: normalizeAreas(mockDatabase.areas),
+      order_sets: normalizeOrderSets(mockDatabase.order_sets),
+      order_set_items: normalizeOrderSetItems(mockDatabase.order_set_items),
+      staffing_targets: normalizeStaffingTargets(mockDatabase.staffing_targets),
+      availability: normalizeAvailability(mockDatabase.availability),
+      shift_templates: normalizeShiftTemplates(mockDatabase.shift_templates),
+      planned_shifts: normalizePlannedShifts(mockDatabase.planned_shifts),
+    };
+    console.log("Mock DB: Reset to initial state or imported data.");
   },
 };

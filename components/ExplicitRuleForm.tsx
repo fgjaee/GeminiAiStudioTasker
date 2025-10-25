@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ExplicitRule, Member, Task, PrimarySelector } from '../types';
+// FIX: Import ID type
+import { ExplicitRule, Member, Task, PrimarySelector, ShiftClass, ID } from '../types';
 import Input from './Input';
 import Select from './Select';
 import Button from './Button';
@@ -17,6 +18,15 @@ interface ExplicitRuleFormProps {
 }
 
 const weekdayOptions = WEEKDAY_NAMES.map(day => ({ value: day, label: day }));
+const shiftClassOptions: { value: ShiftClass | undefined; label: string }[] = [
+    { value: undefined, label: 'No Preference' },
+    { value: 'Opening', label: 'Opening' },
+    { value: 'Mid-Shift', label: 'Mid-Shift' },
+    { value: 'Closing', label: 'Closing' },
+    { value: 'Overnight', label: 'Overnight' },
+    { value: 'Weekend', label: 'Weekend' },
+    { value: 'General', label: 'General' },
+];
 
 const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCancel, members, tasks }) => {
   const [formData, setFormData] = useState<ExplicitRule>(rule || {
@@ -56,7 +66,7 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
   const allRoleTags = useMemo(() => {
     const tags = new Set<string>();
     members.forEach(m => m.role_tags.forEach(tag => tags.add(tag)));
-    tasks.forEach(t => t.skill_required.forEach(skill => tags.add(skill))); // Also consider skills as tags
+    tasks.forEach(t => (t.skill_required || []).forEach(skill => tags.add(skill))); // Also consider skills as tags
     return Array.from(tags).sort().map(tag => ({ value: tag, label: tag }));
   }, [members, tasks]);
 
@@ -70,7 +80,7 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
 
   const handleSelectorChange = useCallback((
     selectorType: 'primary_selector' | 'fallback_selectors',
-    selectorId: string,
+    selectorId: ID,
     field: keyof PrimarySelector,
     value: string
   ) => {
@@ -99,7 +109,7 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
     }));
   }, []);
 
-  const handleRemoveFallback = useCallback((id: string) => {
+  const handleRemoveFallback = useCallback((id: ID) => {
     setFormData(prev => ({
       ...prev,
       fallback_selectors: prev.fallback_selectors?.filter(s => s.id !== id),
@@ -116,6 +126,14 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.taskId) {
+        alert('Please select a task.');
+        return;
+    }
+    if (!formData.primary_selector.value) {
+        alert('Please specify a primary selector value.');
+        return;
+    }
     onSave(formData);
   }, [formData, onSave]);
 
@@ -236,10 +254,10 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
         onChange={handleChange}
         min="0"
       />
-      <Input
+      <Select
         id="prefer_shift_class"
-        label="Prefer Shift Class (e.g., Opening, Closing) (Optional)"
-        type="text"
+        label="Prefer Shift Class (Optional)"
+        options={shiftClassOptions}
         value={formData.prefer_shift_class || ''}
         onChange={handleChange}
       />

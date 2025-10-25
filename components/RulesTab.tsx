@@ -1,18 +1,18 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { ExplicitRule, Member, Task, PrimarySelector } from '../types';
+import { ExplicitRule, Member, Task, PrimarySelector, ID } from '../types';
 import Button from './Button';
 import ExplicitRuleForm from './ExplicitRuleForm';
 import Modal from './Modal';
 import { Plus, Trash2, Pencil, Gavel } from 'lucide-react'; // Gavel for rules
 import { assertUniqueKeys } from '../utils/helpers'; // Ensure assertUniqueKeys is imported
-import { getTaskDisplayName } from '../services/assignmentEngine'; // Import getTaskDisplayName
+import { getTaskDisplayName } from '../services/assignmentEngine';
 
 interface RulesTabProps {
   explicitRules: ExplicitRule[];
   members: Member[];
   tasks: Task[];
   onSaveRule: (rule: ExplicitRule) => Promise<void>;
-  onDeleteRule: (id: string) => Promise<void>;
+  onDeleteRule: (id: ID) => Promise<void>;
 }
 
 const RulesTab: React.FC<RulesTabProps> = ({ explicitRules, members, tasks, onSaveRule, onDeleteRule }) => {
@@ -50,6 +50,10 @@ const RulesTab: React.FC<RulesTabProps> = ({ explicitRules, members, tasks, onSa
   }, [memberMap]);
 
   const sortedRules = useMemo(() => {
+    // Assert unique keys for rules list (dev mode only)
+    if (process.env.NODE_ENV !== "production") {
+      assertUniqueKeys(explicitRules.map(r => r.id), "RulesTab.explicitRules");
+    }
     return [...explicitRules].sort((a, b) => {
       const taskA = taskMap.get(a.taskId);
       const taskB = taskMap.get(b.taskId);
@@ -59,11 +63,6 @@ const RulesTab: React.FC<RulesTabProps> = ({ explicitRules, members, tasks, onSa
       return 0;
     });
   }, [explicitRules, taskMap]);
-
-  // Assert unique keys for rules list (dev mode only)
-  if (process.env.NODE_ENV !== "production") {
-    assertUniqueKeys(explicitRules.map(r => r.id), "RulesTab.explicitRules");
-  }
 
   return (
     <div className="p-6">

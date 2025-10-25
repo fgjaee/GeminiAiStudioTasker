@@ -51,6 +51,7 @@ export const assertUniqueKeys = (keys: (string | number)[], hint: string) => {
  * @returns Total minutes from midnight.
  */
 export const timeToMinutes = (timeString: string): number => {
+  if (!timeString || !timeString.includes(':')) return 0;
   const [hours, minutes] = timeString.split(':').map(Number);
   return hours * 60 + minutes;
 };
@@ -98,7 +99,7 @@ export const formatDate = (dateString: string, format: string = 'YYYY-MM-DD'): s
  * @returns An array of YYYY-MM-DD strings for the week (Monday to Sunday).
  */
 export const getWeekDays = (startDateString: string): string[] => {
-  const startOfWeek = dayjs(startDateString).startOf('week').add(1, 'day'); // Start on Monday
+  const startOfWeek = dayjs(startDateString).startOf('week').day(1); // Start on Monday
   if (startOfWeek.day() === 0) { // If it's still Sunday because of locale, adjust
     startOfWeek.add(1, 'day');
   }
@@ -145,3 +146,32 @@ export function encode(bytes: Uint8Array) {
   }
   return btoa(binary);
 }
+
+/**
+ * Normalizes a name string by removing commas and extra whitespace.
+ * @param s - The name string.
+ * @returns A cleaned-up name.
+ */
+export const normName = (s: string | undefined): string => s?.replace(',', ' ').replace(/\s+/g, ' ').trim() || '';
+
+/**
+ * Converts a time string with AM/PM to 24-hour format (HH:mm).
+ * @param timeStr - The time string (e.g., "8:00 AM", "10:30 PM").
+ * @returns A time string in HH:mm format.
+ */
+export const to24h = (timeStr: string | undefined): string => {
+  if (!timeStr) return '00:00';
+  const cleanTime = timeStr.trim().toUpperCase();
+  const isPM = cleanTime.includes('PM');
+  let [hours, minutes] = cleanTime.replace(/(\s*(AM|PM))/, '').split(':').map(Number);
+
+  if (isNaN(hours) || isNaN(minutes)) return '00:00';
+
+  if (isPM && hours !== 12) {
+    hours += 12;
+  } else if (!isPM && hours === 12) { // Midnight case
+    hours = 0;
+  }
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};

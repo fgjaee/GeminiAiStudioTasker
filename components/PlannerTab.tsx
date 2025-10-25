@@ -1,212 +1,150 @@
 // components/PlannerTab.tsx
-
-
-import React, { useState, useCallback, useMemo } from 'react';
-import {
-  Assignment,
-  DailyWorkload,
-  Task,
-  Member,
-  ManagerSettings,
-  ExplicitRule,
-  WeeklyScheduleDay,
-} from '../types';
-import Button from './Button'; // <-- Added this import
-import { Zap, AlertTriangle, CalendarDays, BarChart2, BookOpenText, CircleCheck } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Member, Area, StaffingTarget, Availability, ShiftTemplate, PlannedShift, PlannerConflict, ManagerSettings, ID } from '../types';
+import Button from './Button';
+import Input from './Input';
+import Select from './Select';
+import { Plus, Trash2, Calendar, Zap, UploadCloud, AlertTriangle } from 'lucide-react';
+import { SHORT_WEEKDAY_NAMES, DATE_FORMAT } from '../constants';
+import { uuid, getNextNDays, formatDate } from '../utils/helpers';
 import dayjs from 'dayjs';
-import { getNextNDays } from '../utils/helpers';
-import { GoogleGenAI } from '@google/genai'; // Ensure GoogleGenAI is imported
-import { getPlannerPrompt } from '../services/plannerEngine'; // Import getPlannerPrompt
 
 interface PlannerTabProps {
   members: Member[];
-  tasks: Task[];
-  explicitRules: ExplicitRule[];
-  weeklySchedule: WeeklyScheduleDay[];
-  assignments: Assignment[];
-  dailyWorkloads: DailyWorkload[];
-  unassignedTasks: Task[];
-  overCapacityMembers: { memberId: string; name: string; date: string; overCapacity: number }[];
+  areas: Area[];
+  staffingTargets: StaffingTarget[];
+  availability: Availability[];
+  shiftTemplates: ShiftTemplate[];
+  plannedShifts: PlannedShift[];
+  conflicts: PlannerConflict[];
   settings: ManagerSettings;
-  // Fix: Removed 'ai' prop as per guidelines. GoogleGenAI instance will be created right before use.
-  // ai: GoogleGenAI | null; 
-  onGenerateAssignments: (startDate: string, numberOfDays: number) => Promise<void>;
+  onSaveStaffingTarget: (target: StaffingTarget) => Promise<void>;
+  onDeleteStaffingTarget: (id: ID) => Promise<void>;
+  onSaveAvailability: (av: Availability) => Promise<void>;
+  onDeleteAvailability: (id: ID) => Promise<void>;
+  onSaveShiftTemplate: (template: ShiftTemplate) => Promise<void>;
+  onDeleteShiftTemplate: (id: ID) => Promise<void>;
+  onSavePlannedShift: (shift: PlannedShift | PlannedShift[]) => Promise<void>;
+  onDeletePlannedShift: (id: ID) => Promise<void>;
+  onDeletePlannedShiftsByDate: (date: string) => Promise<void>;
+  onAutoFillWeek: (startDate: string, numberOfDays: number) => Promise<void>;
+  onRepairCoverage: (date: string, areaId?: ID, timeslot?: string) => Promise<void>;
+  onPublish: (startDate: string, numberOfDays: number) => Promise<void>;
 }
 
-const PlannerTab: React.FC<PlannerTabProps> = ({
-  members,
-  tasks,
-  explicitRules,
-  weeklySchedule,
-  assignments,
-  dailyWorkloads,
-  unassignedTasks,
-  overCapacityMembers,
-  settings,
-  // Fix: Removed 'ai' from destructuring props.
-  // ai,
-  onGenerateAssignments,
-}) => {
-  const [planningDate, setPlanningDate] = useState(dayjs().format('YYYY-MM-DD'));
-  const [planningDays, setPlanningDays] = useState(7);
-  const [planningResults, setPlanningResults] = useState<string | null>(null);
-  const [loadingAI, setLoadingAI] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
+const PlannerTab: React.FC<PlannerTabProps> = (props) => {
+  const [plannerStartDate, setPlannerStartDate] = useState(dayjs().format(DATE_FORMAT));
+  const [numberOfDays, setNumberOfDays] = useState(props.settings.defaultPlanningPeriod || 7);
+  const [viewMode, setViewMode] = useState<'timeline' | 'targets' | 'conflicts'>('timeline');
 
-  const availableDates = useMemo(() => {
-    return getNextNDays(planningDate, planningDays);
-  }, [planningDate, planningDays]);
+  const { onAutoFillWeek, onPublish } = props;
 
-  const handleGeneratePlanning = useCallback(async () => {
-    setLoadingAI(true);
-    setAiError(null);
-    setPlanningResults(null);
-
-    // Fix: Instantiate GoogleGenAI right before making the API call.
-    let aiInstance: GoogleGenAI;
-    try {
-      if (typeof window.aistudio !== 'undefined') {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-          await window.aistudio.openSelectKey();
-          // After openSelectKey, assume key is selected. A new instance will pick it up.
-          setAiError("Please confirm your API key selection. Retrying AI call.");
-        }
-      }
-      aiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY || '' }); // Ensure API_KEY is available
-    } catch (error) {
-      console.error('Error initializing Gemini client:', error);
-      setAiError(`Failed to initialize Gemini client: ${error instanceof Error ? error.message : String(error)}`);
-      setLoadingAI(false);
-      return;
+  const handleAutoFill = useCallback(() => {
+    onAutoFillWeek(plannerStartDate, numberOfDays);
+  }, [onAutoFillWeek, plannerStartDate, numberOfDays]);
+  
+  const handlePublish = useCallback(() => {
+    if (window.confirm(`This will replace the official schedule for ${numberOfDays} days starting ${plannerStartDate}. Are you sure?`)) {
+      onPublish(plannerStartDate, numberOfDays);
     }
+  }, [onPublish, plannerStartDate, numberOfDays]);
 
-    try {
-      // Step 1: Generate assignments using the existing engine
-      // This will update the assignments, dailyWorkloads, etc., in the parent App component's state.
-      await onGenerateAssignments(planningDate, planningDays);
-
-      // After assignments are generated and state is updated, construct AI prompt
-      const prompt = getPlannerPrompt({
-        planningDate,
-        planningDays,
-        members,
-        tasks,
-        explicitRules,
-        weeklySchedule,
-        assignments: assignments, // Use the updated assignments
-        dailyWorkloads: dailyWorkloads, // Use the updated daily workloads
-        unassignedTasks: unassignedTasks, // Use the updated unassigned tasks
-        overCapacityMembers: overCapacityMembers, // Use the updated over capacity members
-        settings,
-        // Fix: Pass availableDates to the plannerEngine
-        availableDates,
-      });
-
-      console.log('Sending prompt to Gemini:', prompt);
-
-      const response = await aiInstance.models.generateContent({
-        model: "gemini-2.5-flash", // Use a suitable model
-        contents: prompt,
-        config: {
-          temperature: 0.7,
-          topP: 0.95,
-          topK: 64,
-        },
-      });
-
-      setPlanningResults(response.text);
-    } catch (error) {
-      console.error('Error during AI planning:', error);
-      setAiError(`Failed to get AI planning results: ${error instanceof Error ? error.message : String(error)}`);
-      // If the error indicates an API key issue, prompt for key selection
-      if (typeof window.aistudio !== 'undefined' && error instanceof Error && error.message.includes("Requested entity was not found.")) {
-        await window.aistudio.openSelectKey();
-        setAiError("API key might be invalid or unselected. Please select your API key again.");
-        // Fix: No need to call setAi here, as the client is instantiated per call.
-        // Instead, the next call to handleGeneratePlanning will create a new instance with the potentially updated key.
-      }
-    } finally {
-      setLoadingAI(false);
+  const renderContent = () => {
+    switch(viewMode) {
+        case 'conflicts':
+            return <ConflictsPanel conflicts={props.conflicts} onRepairCoverage={props.onRepairCoverage} />;
+        case 'targets':
+            return <StaffingTargetsEditor staffingTargets={props.staffingTargets} areas={props.areas} onSave={props.onSaveStaffingTarget} onDelete={props.onDeleteStaffingTarget} />;
+        case 'timeline':
+        default:
+            return <TimelineGridPlaceholder />;
     }
-  }, [planningDate, planningDays, onGenerateAssignments, members, tasks, explicitRules, weeklySchedule, assignments, dailyWorkloads, unassignedTasks, overCapacityMembers, settings, availableDates]);
-
+  }
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-textdark">AI-Powered Planning Assistant</h2>
+        <h2 className="text-3xl font-bold text-textdark">Planner</h2>
         <div className="flex items-center space-x-2">
-          <label htmlFor="planningDate" className="text-sm font-medium text-textdark">Start Date:</label>
-          <input
-            id="planningDate"
-            type="date"
-            value={planningDate}
-            onChange={(e) => setPlanningDate(e.target.value)}
-            className="p-1 rounded-md border border-gray-300 bg-card text-textdark"
-          />
-          <label htmlFor="planningDays" className="text-sm font-medium text-textdark">Days:</label>
-          <input
-            id="planningDays"
-            type="number"
-            value={planningDays}
-            onChange={(e) => setPlanningDays(parseInt(e.target.value, 10))}
-            min="1"
-            max="14"
-            className="w-20 p-1 rounded-md border border-gray-300 bg-card text-textdark"
-          />
-          <Button onClick={handleGeneratePlanning} variant="primary" disabled={loadingAI}>
-            {loadingAI ? 'Generating AI Plan...' : <><Zap size={18} className="mr-2" /> Get AI Plan</>}
-          </Button>
+            <Input id="plannerStartDate" type="date" value={plannerStartDate} onChange={e => setPlannerStartDate(e.target.value)} label="Start Date" />
+            <Input id="plannerDays" type="number" value={numberOfDays} onChange={e => setNumberOfDays(parseInt(e.target.value))} min="1" max="14" label="Days" />
+            <Button onClick={handleAutoFill} variant="primary"><Zap size={18} className="mr-2" /> Auto-Fill Week</Button>
+            <Button onClick={handlePublish} variant="secondary"><UploadCloud size={18} className="mr-2" /> Publish to Schedule</Button>
         </div>
       </div>
-
-      {aiError && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-md">
-          <div className="flex items-center">
-            <AlertTriangle size={20} className="text-red-700 mr-3" />
-            <p className="text-sm font-medium text-red-800">{aiError}</p>
-          </div>
+      
+      <div className="bg-card shadow-lg rounded-lg p-6">
+        <div className="flex border-b mb-4">
+            <button className={`px-4 py-2 ${viewMode === 'timeline' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('timeline')}>Timeline View</button>
+            <button className={`px-4 py-2 ${viewMode === 'targets' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('targets')}>Staffing Targets</button>
+            <button className={`px-4 py-2 flex items-center ${viewMode === 'conflicts' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('conflicts')}>
+                Conflicts {props.conflicts.length > 0 && <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{props.conflicts.length}</span>}
+            </button>
         </div>
-      )}
-
-      {planningResults && (
-        <div className="bg-card shadow-lg rounded-lg p-6 mb-8">
-          <h3 className="text-xl font-semibold text-textdark mb-4 border-b pb-2 flex items-center">
-            <BookOpenText size={20} className="mr-2" /> AI Planning Summary
-          </h3>
-          <div className="bg-gray-50 p-4 rounded-md border border-gray-200 overflow-x-auto custom-scrollbar max-h-[60vh]">
-            <pre className="whitespace-pre-wrap font-mono text-sm text-textdark">
-              {planningResults}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-card shadow-lg rounded-lg p-6 flex flex-col items-center justify-center">
-          <CalendarDays size={48} className="text-primary mb-4" />
-          <h3 className="text-xl font-semibold text-textdark mb-2">Detailed Schedule</h3>
-          <p className="text-gray-700 text-center">Review daily shifts and availability for your team.</p>
-          <Button variant="secondary" className="mt-4" onClick={() => { /* Navigate to Schedule tab */ }}>Go to Schedule</Button>
-        </div>
-
-        <div className="bg-card shadow-lg rounded-lg p-6 flex flex-col items-center justify-center">
-          <BarChart2 size={48} className="text-primary mb-4" />
-          <h3 className="text-xl font-semibold text-textdark mb-2">Workload Overview</h3>
-          <p className="text-gray-700 text-center">Visualize team workload and identify over/under capacity members.</p>
-          <Button variant="secondary" className="mt-4" onClick={() => { /* Navigate to Assignments tab */ }}>View Workloads</Button>
-        </div>
-
-        <div className="bg-card shadow-lg rounded-lg p-6 flex flex-col items-center justify-center">
-          <CircleCheck size={48} className="text-primary mb-4" />
-          <h3 className="text-xl font-semibold text-textdark mb-2">Assignment Status</h3>
-          <p className="text-gray-700 text-center">Track assigned and unassigned tasks with detailed reasons.</p>
-          <Button variant="secondary" className="mt-4" onClick={() => { /* Navigate to Assignments tab */ }}>Manage Assignments</Button>
-        </div>
+        {renderContent()}
       </div>
     </div>
   );
 };
+
+const TimelineGridPlaceholder: React.FC = () => (
+    <div className="text-center py-16">
+        <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-700">Timeline Grid</h3>
+        <p className="text-sm text-gray-500">A visual timeline for manual shift planning is under development.</p>
+    </div>
+);
+
+const StaffingTargetsEditor: React.FC<{staffingTargets: StaffingTarget[], areas: Area[], onSave: (t: StaffingTarget) => void, onDelete: (id: ID) => void}> = ({staffingTargets, areas, onSave, onDelete}) => {
+    // A simplified form to add/edit staffing targets
+    return (
+        <div>
+            <h3 className="text-lg font-semibold text-textdark mb-2">Manage Staffing Targets</h3>
+            {/* Table of existing targets */}
+            <div className="max-h-96 overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    {/* ... table headers ... */}
+                    <tbody>
+                        {staffingTargets.map(t => (
+                            <tr key={t.id}>
+                                <td className="px-2 py-1 text-sm">{t.day}</td>
+                                <td className="px-2 py-1 text-sm">{areas.find(a=>a.id === t.area_id)?.name}</td>
+                                <td className="px-2 py-1 text-sm">{t.start} - {t.end}</td>
+                                <td className="px-2 py-1 text-sm">{t.required_count}</td>
+                                <td className="px-2 py-1 text-sm"><Button size="sm" variant="danger" onClick={() => onDelete(t.id)}><Trash2 size={14}/></Button></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+             {/* Form to add a new target would go here */}
+        </div>
+    );
+}
+
+const ConflictsPanel: React.FC<{conflicts: PlannerConflict[], onRepairCoverage: (date: string, areaId?: ID, timeslot?: string) => void}> = ({conflicts, onRepairCoverage}) => {
+    return (
+        <div>
+            <h3 className="text-lg font-semibold text-textdark mb-2">Detected Conflicts</h3>
+            {conflicts.length === 0 ? <p className="text-gray-500">No conflicts found.</p> : (
+                <ul className="space-y-2 max-h-96 overflow-y-auto">
+                    {conflicts.map(c => (
+                        <li key={c.id} className="p-2 border rounded-md bg-yellow-50 border-yellow-200 flex justify-between items-center">
+                            <div className="flex items-center">
+                                <AlertTriangle className="text-yellow-600 mr-2" size={18}/>
+                                <div>
+                                    <p className="font-semibold text-sm text-yellow-800">{c.type.replace('-', ' ')} on {c.date}</p>
+                                    <p className="text-xs text-yellow-700">{c.details}</p>
+                                </div>
+                            </div>
+                            {c.type === 'under-coverage' && <Button size="sm" onClick={() => onRepairCoverage(c.date!, c.area_id, c.timeslot)}>Auto-Repair</Button>}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    )
+}
+
 
 export default PlannerTab;

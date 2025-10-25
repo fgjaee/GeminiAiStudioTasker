@@ -1,9 +1,10 @@
+// components/MembersTab.tsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { Member } from '../types';
 import Button from './Button';
 import MemberForm from './MemberForm';
 import Modal from './Modal';
-import { Plus, Trash2, Pencil, User } from 'lucide-react';
+import { Plus, Trash2, Pencil, Users } from 'lucide-react';
 import { assertUniqueKeys } from '../utils/helpers';
 
 interface MembersTabProps {
@@ -37,13 +38,13 @@ const MembersTab: React.FC<MembersTabProps> = ({ members, onSaveMember, onDelete
   }, [onSaveMember, handleCloseModal]);
 
   const sortedMembers = useMemo(() => {
+    // Assert unique keys for members list (dev mode only)
+    if (process.env.NODE_ENV !== "production") {
+      assertUniqueKeys(members.map(m => m.id), "MembersTab.members");
+    }
     return [...members].sort((a, b) => a.name.localeCompare(b.name));
   }, [members]);
 
-  // Assert unique keys for members list (dev mode only)
-  if (process.env.NODE_ENV !== "production") {
-    assertUniqueKeys(members.map(m => m.id), "MembersTab.members");
-  }
 
   return (
     <div className="p-6">
@@ -62,24 +63,26 @@ const MembersTab: React.FC<MembersTabProps> = ({ members, onSaveMember, onDelete
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role Tags</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strengths</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commitment (min)</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fixed Commits (min)</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Daily (min)</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Weekly (min)</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift Pref.</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Availability</th>
               <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedMembers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                  No team members defined yet. Click "Add New Member" to get started.
+                <td colSpan={10} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                  No members defined yet.
                 </td>
               </tr>
             ) : (
               sortedMembers.map((member) => (
                 <tr key={member.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-textdark flex items-center">
-                    <User size={16} className="mr-2 text-gray-500" /> {member.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{member.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-textdark">{member.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{member.title || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     <div className="flex flex-wrap gap-1">
                       {member.role_tags.map(tag => (
@@ -99,6 +102,26 @@ const MembersTab: React.FC<MembersTabProps> = ({ members, onSaveMember, onDelete
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{member.fixed_commitments_minutes}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{member.max_daily_minutes || 'Unlimited'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{member.max_weekly_minutes || 'Unlimited'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <div className="flex flex-wrap gap-1">
+                      {(member.shift_class_preference || []).map(pref => (
+                        <span key={pref} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {pref}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <div className="flex flex-col gap-0.5">
+                      {(member.availability || []).map(av => (
+                        <span key={av.id} className="text-xs">
+                          {av.day}: {av.start}-{av.end}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" size="sm" onClick={() => handleOpenEditModal(member)} title="Edit Member">
@@ -119,7 +142,7 @@ const MembersTab: React.FC<MembersTabProps> = ({ members, onSaveMember, onDelete
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingMember ? 'Edit Member' : 'Add New Member'}
+        title={editingMember ? 'Edit Team Member' : 'Add New Team Member'}
       >
         <MemberForm
           member={editingMember}

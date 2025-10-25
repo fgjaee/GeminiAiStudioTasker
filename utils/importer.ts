@@ -22,6 +22,10 @@ import {
   normalizeAreas,
   normalizeOrderSets,
   normalizeOrderSetItems,
+  normalizeStaffingTargets,
+  normalizeAvailability,
+  normalizeShiftTemplates,
+  normalizePlannedShifts,
 } from './normalizers';
 
 /**
@@ -118,6 +122,7 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
   }).filter(rule => rule !== null) as ExplicitRule[]; // Filter out nulls from skipped rules
 
 
+  // FIX: Ensure all properties of SupabaseTableData are present, including new planner-related ones.
   const newSupabaseData: SupabaseTableData = {
     members: normalizeMembers(oldData.members.map(om => ({
       id: om.id,
@@ -137,6 +142,10 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
     areas: normalizeAreas([]), // Not in old data
     order_sets: normalizeOrderSets([]), // Not in old data
     order_set_items: normalizeOrderSetItems([]), // Not in old data
+    staffing_targets: normalizeStaffingTargets([]),
+    availability: normalizeAvailability([]),
+    shift_templates: normalizeShiftTemplates([]),
+    planned_shifts: normalizePlannedShifts([]),
   };
 
   return newSupabaseData;
@@ -167,13 +176,12 @@ export const importData = async (file: File): Promise<SupabaseTableData> => {
           parsedData.weekly_schedule &&
           parsedData.assignments &&
           parsedData.templates &&
-          parsedData.manager_settings &&
-          parsedData.areas &&
-          parsedData.order_sets &&
-          parsedData.order_set_items
+          parsedData.manager_settings
+          // Keep this check loose to support older versions of the "new" format
         ) {
           console.log('Importer: Detected current data format. Normalizing...');
           // Apply normalizers to ensure data consistency, especially for IDs that might be missing in older exports of new format
+          // FIX: Add missing planner properties with fallbacks to empty arrays to support older JSON structures.
           const normalizedData: SupabaseTableData = {
             members: normalizeMembers(parsedData.members),
             tasks: normalizeTasks(parsedData.tasks),
@@ -182,9 +190,13 @@ export const importData = async (file: File): Promise<SupabaseTableData> => {
             assignments: normalizeAssignments(parsedData.assignments),
             templates: normalizeTemplates(parsedData.templates),
             manager_settings: normalizeManagerSettings(parsedData.manager_settings),
-            areas: normalizeAreas(parsedData.areas),
-            order_sets: normalizeOrderSets(parsedData.order_sets),
-            order_set_items: normalizeOrderSetItems(parsedData.order_set_items),
+            areas: normalizeAreas(parsedData.areas || []),
+            order_sets: normalizeOrderSets(parsedData.order_sets || []),
+            order_set_items: normalizeOrderSetItems(parsedData.order_set_items || []),
+            staffing_targets: normalizeStaffingTargets(parsedData.staffing_targets || []),
+            availability: normalizeAvailability(parsedData.availability || []),
+            shift_templates: normalizeShiftTemplates(parsedData.shift_templates || []),
+            planned_shifts: normalizePlannedShifts(parsedData.planned_shifts || []),
           };
           resolve(normalizedData);
         } else {

@@ -40,6 +40,14 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ template, onSave, onCancel 
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+        alert('Template Name is required.');
+        return;
+    }
+    if (!formData.content.trim()) {
+        alert('Template Content is required.');
+        return;
+    }
     onSave(formData);
   }, [formData, onSave]);
 
@@ -66,11 +74,14 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ template, onSave, onCancel 
         Use placeholders like <code>{'{{date}}'}</code>, <code>{'{{store}}'}</code>, <code>{'{{department}}'}</code>, <code>{'{{floorSlaTime}}'}</code>.<br/>
         For assignment tables, use Handlebars-like syntax: <br/>
         <code>{'{{#each assignmentsByMember}}'}</code><br/>
-        <code>{'| **{{this.memberName}}** | | | | | |'}</code><br/>
+        <code>{'| **{{this.memberName}}** | | | | | | |'}</code><br/>
         <code>{'{{#each this.tasks}}'}</code><br/>
-        <code>{'| | {{this.taskName}} | {{this.duration}} mins | {{this.startTime}} | {{this.endTime}} | {{this.reason}} |'}</code><br/>
+        <code>{'| | {{this.taskName}} | {{this.duration}} mins | {{this.startTime}} | {{this.endTime}} | {{this.status}} | {{this.reason}} |'}</code><br/>
         <code>{'{{/each}}'}</code><br/>
-        <code>{'| | **Total Workload:** | **{{this.totalDuration}} mins** | | | |'}</code><br/>
+        <code>{'| | **Total Assigned Workload:** | **{{this.totalDuration}} mins** | | | | |'}</code><br/>
+        <code>{'{{#if (gt this.capacity 0)}}'}</code><br/>
+        <code>{'| | **Available Capacity:** | **{{minus this.capacity this.totalDuration}} mins** | | | | |'}</code><br/>
+        <code>{'{{/if}}'}</code><br/>
         <code>{'{{/each}}'}</code><br/>
         <br/>
         <code>{'{{#if unassignedTasks.length}}'}</code><br/>
@@ -83,7 +94,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ template, onSave, onCancel 
         <code>{'{{#if overCapacityMembers.length}}'}</code><br/>
         <code>{'### Over-Capacity Members:'}</code><br/>
         <code>{'{{#each overCapacityMembers}}'}</code><br/>
-        <code>{'*   {{this.memberName}}: {{this.overCapacity}} mins over capacity'}</code><br/>
+        <code>{'*   {{this.name}}: {{this.overCapacity}} mins over capacity'}</code><br/>
         <code>{'{{/each}}'}</code><br/>
         <code>{'{{/if}}'}</code>
       </p>
