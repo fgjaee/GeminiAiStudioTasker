@@ -193,8 +193,8 @@ export type SupabaseTableName =
   | 'staffing_targets' // Phase B: Planner
   | 'availability' // Phase B: Planner
   | 'shift_templates' // Phase B: Planner
-  | 'planned_shifts'; // Phase B: Planner
-
+  | 'planned_shifts' // Phase B: Planner
+  | 'shift_patterns'; // Drag-and-drop scheduler enhancement
 
 export type SupabaseTableData = {
   members: Member[];
@@ -211,6 +211,7 @@ export type SupabaseTableData = {
   availability: Availability[];
   shift_templates: ShiftTemplate[];
   planned_shifts: PlannedShift[];
+  shift_patterns: ShiftPattern[];
 };
 
 // --- Old Backup Data Structure (for importer) ---
@@ -296,7 +297,7 @@ export type PlannedShiftSource = 'planner' | 'template' | 'manual' | 'autofill';
 export type PlannedShift = {
   id: ID;
   member_id: ID;
-  day: string; // 'Mon', 'Tue', etc.
+  day: 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
   date: string; // YYYY-MM-DD for specific instance
   start: string; // HH:mm
   end: string; // HH:mm
@@ -323,4 +324,20 @@ export type PlannerConflict = {
 export type PlanningAssistantResponse = {
   suggestions: string; // Natural language suggestions
   // More structured suggestions could go here
+};
+
+// --- Drag-and-drop scheduler enhancement ---
+export type ShiftPattern = {
+  id: ID;
+  member_id: ID;
+  name: string; // e.g., "Alice's Standard Week"
+  // Store shifts relative to the day of the week, not a specific date
+  // FIX: Redefined the 'shifts' type to accurately reflect the data being stored and used (day, start, end, area_id),
+  // which resolves type mismatches when creating and applying patterns.
+  shifts: {
+    day: ParsedScheduleShift['day'];
+    start: string;
+    end: string;
+    area_id?: ID;
+  }[];
 };

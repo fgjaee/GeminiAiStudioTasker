@@ -1,6 +1,6 @@
 // components/Header.tsx
 import React from 'react';
-import { Zap, Calendar, Users, ClipboardList, ListOrdered, Database, Settings, CalendarCheck, FileText } from 'lucide-react';
+import { Zap, Calendar, Users, ClipboardList, ListOrdered, Database, Settings, CalendarCheck, FileText, Image } from 'lucide-react';
 import Button from './Button'; // Assuming Button component exists
 
 interface HeaderProps {
@@ -17,6 +17,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     { id: 'tasks', label: 'Tasks', icon: ClipboardList },
     { id: 'rules', label: 'Rules', icon: ListOrdered },
     { id: 'review', label: 'Review', icon: FileText }, // Changed icon to FileText for Review
+    { id: 'image-analysis', label: 'Image Analysis', icon: Image },
     { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'data-architecture', label: 'Data Architecture', icon: Database },
   ];

@@ -2,7 +2,8 @@
 import { uuid } from './helpers';
 import {
   Member, Task, ExplicitRule, WeeklyScheduleDay, Assignment, Template, ManagerSettings,
-  Area, OrderSet, OrderSetItem, StaffingTarget, Availability, ShiftTemplate, PlannedShift, PrimarySelector
+  Area, OrderSet, OrderSetItem, StaffingTarget, Availability, ShiftTemplate, PlannedShift, PrimarySelector,
+  ShiftPattern
 } from '../types';
 
 // Generic normalizer to ensure items in an array have an ID.
@@ -47,3 +48,4 @@ export const normalizeStaffingTargets = (items: StaffingTarget[]): StaffingTarge
 export const normalizeAvailability = (items: Availability[]): Availability[] => normalizeArray(items);
 export const normalizeShiftTemplates = (items: ShiftTemplate[]): ShiftTemplate[] => normalizeArray(items);
 export const normalizePlannedShifts = (items: PlannedShift[]): PlannedShift[] => normalizeArray(items);
+export const normalizeShiftPatterns = (items: ShiftPattern[]): ShiftPattern[] => normalizeArray(items);

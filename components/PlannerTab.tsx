@@ -1,6 +1,6 @@
 // components/PlannerTab.tsx
 import React, { useState, useMemo, useCallback } from 'react';
-import { Member, Area, StaffingTarget, Availability, ShiftTemplate, PlannedShift, PlannerConflict, ManagerSettings, ID } from '../types';
+import { Member, Area, StaffingTarget, Availability, ShiftTemplate, PlannedShift, PlannerConflict, ManagerSettings, ID, ShiftPattern } from '../types';
 import Button from './Button';
 import Input from './Input';
 import Select from './Select';
@@ -8,6 +8,9 @@ import { Plus, Trash2, Calendar, Zap, UploadCloud, AlertTriangle } from 'lucide-
 import { SHORT_WEEKDAY_NAMES, DATE_FORMAT } from '../constants';
 import { uuid, getNextNDays, formatDate } from '../utils/helpers';
 import dayjs from 'dayjs';
+import TimelineGrid from './Planner/TimelineGrid';
+import ShiftEditorModal from './Planner/ShiftEditorModal';
+import ShiftPatternManager from './Planner/ShiftPatternManager';
 
 interface PlannerTabProps {
   members: Member[];
@@ -18,6 +21,7 @@ interface PlannerTabProps {
   plannedShifts: PlannedShift[];
   conflicts: PlannerConflict[];
   settings: ManagerSettings;
+  shiftPatterns: ShiftPattern[];
   onSaveStaffingTarget: (target: StaffingTarget) => Promise<void>;
   onDeleteStaffingTarget: (id: ID) => Promise<void>;
   onSaveAvailability: (av: Availability) => Promise<void>;
@@ -30,14 +34,26 @@ interface PlannerTabProps {
   onAutoFillWeek: (startDate: string, numberOfDays: number) => Promise<void>;
   onRepairCoverage: (date: string, areaId?: ID, timeslot?: string) => Promise<void>;
   onPublish: (startDate: string, numberOfDays: number) => Promise<void>;
+  onSaveShiftPattern: (pattern: ShiftPattern) => Promise<void>;
+  onDeleteShiftPattern: (id: ID) => Promise<void>;
 }
+
+// Data needed to create or edit a shift
+type ShiftEditorData = {
+    shift: Partial<PlannedShift>; // Partial for creation, full for editing
+    isNew: boolean;
+};
 
 const PlannerTab: React.FC<PlannerTabProps> = (props) => {
   const [plannerStartDate, setPlannerStartDate] = useState(dayjs().format(DATE_FORMAT));
   const [numberOfDays, setNumberOfDays] = useState(props.settings.defaultPlanningPeriod || 7);
   const [viewMode, setViewMode] = useState<'timeline' | 'targets' | 'conflicts'>('timeline');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingShiftData, setEditingShiftData] = useState<ShiftEditorData | null>(null);
 
-  const { onAutoFillWeek, onPublish } = props;
+  const { onAutoFillWeek, onPublish, onSavePlannedShift } = props;
+
+  const targetDates = useMemo(() => getNextNDays(plannerStartDate, numberOfDays), [plannerStartDate, numberOfDays]);
 
   const handleAutoFill = useCallback(() => {
     onAutoFillWeek(plannerStartDate, numberOfDays);
@@ -49,6 +65,31 @@ const PlannerTab: React.FC<PlannerTabProps> = (props) => {
     }
   }, [onPublish, plannerStartDate, numberOfDays]);
 
+  const openShiftEditor = useCallback((shift: Partial<PlannedShift>, isNew: boolean) => {
+    setEditingShiftData({ shift, isNew });
+    setIsEditorOpen(true);
+  }, []);
+
+  const closeShiftEditor = useCallback(() => {
+    setIsEditorOpen(false);
+    setEditingShiftData(null);
+  }, []);
+
+  const handleSaveShift = useCallback(async (shiftToSave: PlannedShift) => {
+    await onSavePlannedShift(shiftToSave);
+    closeShiftEditor();
+  }, [onSavePlannedShift, closeShiftEditor]);
+
+  const handleDeleteShift = useCallback(async (id: ID) => {
+    await props.onDeletePlannedShift(id);
+    closeShiftEditor();
+  }, [props.onDeletePlannedShift, closeShiftEditor]);
+
+  const handleApplyPattern = useCallback((patternShifts: Omit<PlannedShift, 'id'>[]) => {
+      const shiftsToCreate = patternShifts.map(ps => ({ ...ps, id: uuid() }));
+      onSavePlannedShift(shiftsToCreate);
+  }, [onSavePlannedShift]);
+
   const renderContent = () => {
     switch(viewMode) {
         case 'conflicts':
@@ -57,7 +98,17 @@ const PlannerTab: React.FC<PlannerTabProps> = (props) => {
             return <StaffingTargetsEditor staffingTargets={props.staffingTargets} areas={props.areas} onSave={props.onSaveStaffingTarget} onDelete={props.onDeleteStaffingTarget} />;
         case 'timeline':
         default:
-            return <TimelineGridPlaceholder />;
+            return (
+              <TimelineGrid
+                targetDates={targetDates}
+                plannedShifts={props.plannedShifts}
+                members={props.members}
+                areas={props.areas}
+                settings={props.settings}
+                onShiftClick={(shift) => openShiftEditor(shift, false)}
+                onNewShift={(shiftData) => openShiftEditor(shiftData, true)}
+              />
+            );
     }
   }
 
@@ -68,42 +119,68 @@ const PlannerTab: React.FC<PlannerTabProps> = (props) => {
         <div className="flex items-center space-x-2">
             <Input id="plannerStartDate" type="date" value={plannerStartDate} onChange={e => setPlannerStartDate(e.target.value)} label="Start Date" />
             <Input id="plannerDays" type="number" value={numberOfDays} onChange={e => setNumberOfDays(parseInt(e.target.value))} min="1" max="14" label="Days" />
-            <Button onClick={handleAutoFill} variant="primary"><Zap size={18} className="mr-2" /> Auto-Fill Week</Button>
-            <Button onClick={handlePublish} variant="secondary"><UploadCloud size={18} className="mr-2" /> Publish to Schedule</Button>
         </div>
       </div>
+
+      <ShiftPatternManager
+        members={props.members}
+        shiftPatterns={props.shiftPatterns}
+        plannedShifts={props.plannedShifts}
+        targetDates={targetDates}
+        onSavePattern={props.onSaveShiftPattern}
+        onDeletePattern={props.onDeleteShiftPattern}
+        onApplyPattern={handleApplyPattern}
+      />
       
-      <div className="bg-card shadow-lg rounded-lg p-6">
-        <div className="flex border-b mb-4">
-            <button className={`px-4 py-2 ${viewMode === 'timeline' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('timeline')}>Timeline View</button>
-            <button className={`px-4 py-2 ${viewMode === 'targets' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('targets')}>Staffing Targets</button>
-            <button className={`px-4 py-2 flex items-center ${viewMode === 'conflicts' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('conflicts')}>
-                Conflicts {props.conflicts.length > 0 && <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{props.conflicts.length}</span>}
-            </button>
+      <div className="bg-card shadow-lg rounded-lg p-6 mt-6">
+        <div className="flex justify-between items-center mb-4">
+            <div className="flex border-b">
+                <button className={`px-4 py-2 ${viewMode === 'timeline' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('timeline')}>Timeline View</button>
+                <button className={`px-4 py-2 ${viewMode === 'targets' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('targets')}>Staffing Targets</button>
+                <button className={`px-4 py-2 flex items-center ${viewMode === 'conflicts' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`} onClick={() => setViewMode('conflicts')}>
+                    Conflicts {props.conflicts.length > 0 && <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{props.conflicts.length}</span>}
+                </button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button onClick={handleAutoFill} variant="primary"><Zap size={18} className="mr-2" /> Auto-Fill</Button>
+              <Button onClick={handlePublish} variant="secondary"><UploadCloud size={18} className="mr-2" /> Publish</Button>
+            </div>
         </div>
         {renderContent()}
       </div>
+
+      {isEditorOpen && editingShiftData && (
+        <ShiftEditorModal
+            isOpen={isEditorOpen}
+            onClose={closeShiftEditor}
+            onSave={handleSaveShift}
+            onDelete={handleDeleteShift}
+            shiftData={editingShiftData.shift}
+            isNew={editingShiftData.isNew}
+            members={props.members}
+            areas={props.areas}
+        />
+      )}
     </div>
   );
 };
 
-const TimelineGridPlaceholder: React.FC = () => (
-    <div className="text-center py-16">
-        <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-700">Timeline Grid</h3>
-        <p className="text-sm text-gray-500">A visual timeline for manual shift planning is under development.</p>
-    </div>
-);
 
 const StaffingTargetsEditor: React.FC<{staffingTargets: StaffingTarget[], areas: Area[], onSave: (t: StaffingTarget) => void, onDelete: (id: ID) => void}> = ({staffingTargets, areas, onSave, onDelete}) => {
-    // A simplified form to add/edit staffing targets
     return (
         <div>
             <h3 className="text-lg font-semibold text-textdark mb-2">Manage Staffing Targets</h3>
-            {/* Table of existing targets */}
             <div className="max-h-96 overflow-y-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                    {/* ... table headers ... */}
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Area</th>
+                        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
+                        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
                     <tbody>
                         {staffingTargets.map(t => (
                             <tr key={t.id}>
@@ -117,7 +194,6 @@ const StaffingTargetsEditor: React.FC<{staffingTargets: StaffingTarget[], areas:
                     </tbody>
                 </table>
             </div>
-             {/* Form to add a new target would go here */}
         </div>
     );
 }

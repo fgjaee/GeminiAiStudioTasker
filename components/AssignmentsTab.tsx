@@ -109,13 +109,15 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   }, []);
 
   const unassignedTasksSummary = useMemo(() => {
+    // FIX: Refactored to avoid destructuring with rest operator which loses type info.
+    // The full unassignedTaskItem is used instead, which is type-safe.
     const summary = new Map<ID, { task: Task, reasons: Set<string> }>();
-    unassignedTasks.forEach(({ unassignedReason, ...task }) => {
-        if (!summary.has(task.id)) {
-            summary.set(task.id, { task, reasons: new Set() });
+    unassignedTasks.forEach((unassignedTaskItem) => {
+        if (!summary.has(unassignedTaskItem.id)) {
+            summary.set(unassignedTaskItem.id, { task: unassignedTaskItem, reasons: new Set() });
         }
-        const reasons = unassignedReason.split(', ');
-        reasons.forEach(reason => summary.get(task.id)!.reasons.add(reason));
+        const reasons = unassignedTaskItem.unassignedReason.split(', ');
+        reasons.forEach(reason => summary.get(unassignedTaskItem.id)!.reasons.add(reason));
     });
     return Array.from(summary.values());
   }, [unassignedTasks]);

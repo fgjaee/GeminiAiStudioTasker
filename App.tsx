@@ -8,6 +8,8 @@ import {
   ParsedScheduleData,
   ScheduleShift,
   DailyWorkload,
+  ShiftPattern,
+  ParsedScheduleShift,
 } from './types';
 import { supabaseMock } from './services/supabaseMock';
 import { DEFAULT_MANAGER_SETTINGS } from './constants';
@@ -26,12 +28,13 @@ import SettingsTab from './components/SettingsTab';
 import DataArchitectureTab from './components/DataArchitectureTab';
 import PlannerTab from './components/PlannerTab';
 import { autoFillSchedule, calculatePlannerConflicts, publishPlannedShiftsMock } from './services/plannerEngine';
+import GeminiImageAnalyzer from './components/GeminiImageAnalyzer';
 
 
 const AppContent: React.FC = () => {
   const { addToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('assignments');
+  const [activeTab, setActiveTab] = useState('image-analysis');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +45,6 @@ const AppContent: React.FC = () => {
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklyScheduleDay[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [dailyWorkloads, setDailyWorkloads] = useState<DailyWorkload[]>([]);
-  // FIX: Correct the type for unassignedTasks to match the data structure returned by the assignment engine, which includes a reason.
   const [unassignedTasks, setUnassignedTasks] = useState<(Task & { unassignedReason: string; })[]>([]);
   const [overCapacityMembers, setOverCapacityMembers] = useState<{ memberId: ID; name: string; date: string; overCapacity: number }[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -55,6 +57,9 @@ const AppContent: React.FC = () => {
   const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>([]);
   const [plannedShifts, setPlannedShifts] = useState<PlannedShift[]>([]);
   const [plannerConflicts, setPlannerConflicts] = useState<PlannerConflict[]>([]);
+  const [shiftPatterns, setShiftPatterns] = useState<ShiftPattern[]>([]);
+  const [shiftsForManualImport, setShiftsForManualImport] = useState<ParsedScheduleShift[] | null>(null);
+
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -75,6 +80,7 @@ const AppContent: React.FC = () => {
         supabaseMock.from<Availability>('availability').select(),
         supabaseMock.from<ShiftTemplate>('shift_templates').select(),
         supabaseMock.from<PlannedShift>('planned_shifts').select(),
+        supabaseMock.from<ShiftPattern>('shift_patterns').select(),
       ]);
 
       setMembers(results[0].data || []);
@@ -91,6 +97,7 @@ const AppContent: React.FC = () => {
       setAvailability(results[11].data || []);
       setShiftTemplates(results[12].data || []);
       setPlannedShifts(results[13].data || []);
+      setShiftPatterns(results[14].data || []);
 
       addToast({ message: 'Data loaded successfully!', type: 'success' });
     } catch (err) {
@@ -145,6 +152,8 @@ const AppContent: React.FC = () => {
   const handleDeleteShiftTemplate = createDeleteHandler('shift_templates', 'Shift Template');
   const handleSavePlannedShift = createSaveHandler<PlannedShift>('planned_shifts', 'Planned Shift');
   const handleDeletePlannedShift = createDeleteHandler('planned_shifts', 'Planned Shift');
+  const handleSaveShiftPattern = createSaveHandler<ShiftPattern>('shift_patterns', 'Shift Pattern');
+  const handleDeleteShiftPattern = createDeleteHandler('shift_patterns', 'Shift Pattern');
 
   const handleDeletePlannedShiftsByDate = useCallback(async (date: string) => {
     if (!window.confirm(`Delete all planned shifts for ${dayjs(date).format('MMMM D')}?`)) return;
@@ -164,7 +173,6 @@ const AppContent: React.FC = () => {
 
   const handleGenerateAssignments = useCallback(async (startDate: string, numberOfDays: number) => {
     setLoading(true); addToast({ message: 'Generating assignments...', type: 'info' });
-    // FIX: Correct the type for `newUnassignedTasks` to align with the state and engine output.
     let newAssignments: Assignment[] = [], newDailyWorkloads: DailyWorkload[] = [], newUnassignedTasks: (Task & { unassignedReason: string; })[] = [], newOverCapacityMembers: any[] = [];
     const dates = getNextNDays(startDate, numberOfDays);
     for (const date of dates) {
@@ -210,18 +218,25 @@ const AppContent: React.FC = () => {
     } catch (err) { addToast({ message: `Publishing failed: ${(err as Error).message}`, type: 'error' });
     } finally { setLoading(false); }
   }, [plannedShifts, weeklySchedule, handleSaveWeeklySchedule, addToast]);
+  
+  const handleScheduleParsed = useCallback((parsedShifts: ParsedScheduleShift[]) => {
+      setShiftsForManualImport(parsedShifts);
+      setActiveTab('schedule');
+      addToast({ message: 'Parsed shifts ready for review in the Manual Schedule Editor.', type: 'info' });
+  }, [addToast]);
 
   const renderTab = () => {
     if (loading) return <div className="p-6 text-center">Loading...</div>;
     if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
     switch (activeTab) {
       case 'assignments': return <AssignmentsTab assignments={assignments} dailyWorkloads={dailyWorkloads} unassignedTasks={unassignedTasks} overCapacityMembers={overCapacityMembers} members={members} tasks={tasks} settings={settings} weeklySchedule={weeklySchedule} onGenerateAssignments={handleGenerateAssignments} onLockAssignment={handleLockAssignment} onSaveAssignmentChanges={handleSaveAssignmentChanges} />;
-      case 'planner': return <PlannerTab members={members} areas={areas} staffingTargets={staffingTargets} availability={availability} shiftTemplates={shiftTemplates} plannedShifts={plannedShifts} conflicts={plannerConflicts} settings={settings} onSaveStaffingTarget={handleSaveStaffingTarget} onDeleteStaffingTarget={handleDeleteStaffingTarget} onSaveAvailability={handleSaveAvailability} onDeleteAvailability={handleDeleteAvailability} onSaveShiftTemplate={handleSaveShiftTemplate} onDeleteShiftTemplate={handleDeleteShiftTemplate} onSavePlannedShift={handleSavePlannedShift} onDeletePlannedShift={handleDeletePlannedShift} onDeletePlannedShiftsByDate={handleDeletePlannedShiftsByDate} onAutoFillWeek={handleAutoFillWeek} onRepairCoverage={handleRepairCoverage} onPublish={handlePublishPlannedShifts} />;
-      case 'schedule': return <ScheduleTab members={members} weeklySchedule={weeklySchedule} onSaveWeeklySchedule={handleSaveWeeklySchedule} onDeleteWeeklySchedule={handleDeleteWeeklySchedule} fetchData={fetchData} onSaveMember={handleSaveMember} />;
+      case 'planner': return <PlannerTab members={members} areas={areas} staffingTargets={staffingTargets} availability={availability} shiftTemplates={shiftTemplates} plannedShifts={plannedShifts} conflicts={plannerConflicts} settings={settings} onSaveStaffingTarget={handleSaveStaffingTarget} onDeleteStaffingTarget={handleDeleteStaffingTarget} onSaveAvailability={handleSaveAvailability} onDeleteAvailability={handleDeleteAvailability} onSaveShiftTemplate={handleSaveShiftTemplate} onDeleteShiftTemplate={handleDeleteShiftTemplate} onSavePlannedShift={handleSavePlannedShift} onDeletePlannedShift={handleDeletePlannedShift} onDeletePlannedShiftsByDate={handleDeletePlannedShiftsByDate} onAutoFillWeek={handleAutoFillWeek} onRepairCoverage={handleRepairCoverage} onPublish={handlePublishPlannedShifts} shiftPatterns={shiftPatterns} onSaveShiftPattern={handleSaveShiftPattern} onDeleteShiftPattern={handleDeleteShiftPattern} />;
+      case 'schedule': return <ScheduleTab members={members} weeklySchedule={weeklySchedule} shiftPatterns={shiftPatterns} onSaveWeeklySchedule={handleSaveWeeklySchedule} onDeleteWeeklySchedule={handleDeleteWeeklySchedule} fetchData={fetchData} onSaveMember={handleSaveMember} onSaveShiftPattern={handleSaveShiftPattern} onDeleteShiftPattern={handleDeleteShiftPattern} initialShiftsForEditor={shiftsForManualImport} onEditorClosed={() => setShiftsForManualImport(null)} />;
       case 'members': return <MembersTab members={members} onSaveMember={handleSaveMember} onDeleteMember={handleDeleteMember} />;
       case 'tasks': return <TasksTab tasks={tasks} areas={areas} orderSets={orderSets} orderSetItems={orderSetItems} onSaveTask={handleSaveTask} onDeleteTask={handleDeleteTask} onSaveArea={handleSaveArea} onDeleteArea={handleDeleteArea} onSaveOrderSet={handleSaveOrderSet} onDeleteOrderSet={handleDeleteOrderSet} onSaveOrderSetItem={handleSaveOrderSetItem} onDeleteOrderSetItem={handleDeleteOrderSetItem} />;
       case 'rules': return <RulesTab explicitRules={explicitRules} members={members} tasks={tasks} onSaveRule={handleSaveRule} onDeleteRule={handleDeleteRule} />;
       case 'review': return <ReviewTab assignments={assignments} dailyWorkloads={dailyWorkloads} unassignedTasks={unassignedTasks} overCapacityMembers={overCapacityMembers} members={members} tasks={tasks} templates={templates} settings={settings} />;
+      case 'image-analysis': return <GeminiImageAnalyzer onScheduleParsed={handleScheduleParsed} />;
       case 'settings': return <SettingsTab settings={settings} templates={templates} onSaveSettings={handleSaveSettings} onSaveTemplate={handleSaveTemplate} onDeleteTemplate={handleDeleteTemplate} onImportData={() => {}} onExportData={() => {}} onClearAllData={() => {}} />;
       case 'data-architecture': return <DataArchitectureTab />;
       default: return <div>Select a tab</div>;

@@ -1,6 +1,6 @@
 // components/ScheduleTab.tsx
-import React, { useState, useCallback, useMemo } from 'react';
-import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleData, ParsedScheduleShift, ID, ShiftClass } from '../types';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleData, ParsedScheduleShift, ID, ShiftClass, ShiftPattern } from '../types';
 import Button from './Button';
 import Modal from './Modal';
 import Input from './Input';
@@ -15,19 +15,29 @@ import ManualScheduleEditor from './ManualScheduleEditor';
 interface ScheduleTabProps {
   members: Member[];
   weeklySchedule: WeeklyScheduleDay[];
+  shiftPatterns: ShiftPattern[];
   onSaveMember: (member: Member) => Promise<void>;
   onSaveWeeklySchedule: (scheduleDay: WeeklyScheduleDay | WeeklyScheduleDay[]) => Promise<void>;
   onDeleteWeeklySchedule: (id: ID) => Promise<void>;
-  fetchData: () => Promise<void>; 
+  fetchData: () => Promise<void>;
+  onSaveShiftPattern: (pattern: ShiftPattern) => Promise<void>;
+  onDeleteShiftPattern: (id: ID) => Promise<void>;
+  initialShiftsForEditor?: ParsedScheduleShift[] | null;
+  onEditorClosed?: () => void;
 }
 
 const ScheduleTab: React.FC<ScheduleTabProps> = ({
   members,
   weeklySchedule,
+  shiftPatterns,
   onSaveMember,
   onSaveWeeklySchedule,
   onDeleteWeeklySchedule,
   fetchData,
+  onSaveShiftPattern,
+  onDeleteShiftPattern,
+  initialShiftsForEditor,
+  onEditorClosed,
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isEditShiftModalOpen, setIsEditShiftModalOpen] = useState(false);
@@ -46,8 +56,24 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
 
   const memberOptions = useMemo(() => members.map(m => ({ value: m.id, label: m.name })).sort((a,b) => a.label.localeCompare(b.label)), [members]);
   const memberMap = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
+  
+  useEffect(() => {
+    if (initialShiftsForEditor && initialShiftsForEditor.length > 0) {
+      setParsedShiftsForManualEdit(initialShiftsForEditor);
+      setIsManualEditorOpen(true);
+    }
+  }, [initialShiftsForEditor]);
+
+  const handleCloseManualEditor = useCallback(() => {
+      setIsManualEditorOpen(false);
+      if (onEditorClosed) {
+          onEditorClosed();
+      }
+  }, [onEditorClosed]);
+
 
   const sortedSchedule = useMemo(() => {
+    // FIX: Explicitly type the Map to ensure correct type inference for `groupedByDate.values()`.
     const groupedByDate = weeklySchedule.reduce((acc, day) => {
         if (!acc.has(day.date)) {
             acc.set(day.date, JSON.parse(JSON.stringify(day)));
@@ -169,8 +195,8 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
   
   const handleSaveManualShifts = useCallback(async (shifts: ParsedScheduleShift[]) => {
       await processAndSaveParsedShifts(shifts, dayjs().format(DATE_FORMAT));
-      setIsManualEditorOpen(false);
-  }, [processAndSaveParsedShifts]);
+      handleCloseManualEditor();
+  }, [processAndSaveParsedShifts, handleCloseManualEditor]);
 
 
   const handleOpenEditShiftModal = useCallback((scheduleDay: WeeklyScheduleDay, shift: ScheduleShift) => {
@@ -253,12 +279,15 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
       </div>
       
       {isManualEditorOpen && (
-          <Modal isOpen={isManualEditorOpen} onClose={() => setIsManualEditorOpen(false)} title="Manual Schedule Editor">
+          <Modal isOpen={isManualEditorOpen} onClose={handleCloseManualEditor} title="Manual Schedule Editor">
               <ManualScheduleEditor
                   initialShifts={parsedShiftsForManualEdit}
                   members={members}
+                  shiftPatterns={shiftPatterns}
                   onSave={handleSaveManualShifts}
-                  onCancel={() => setIsManualEditorOpen(false)}
+                  onCancel={handleCloseManualEditor}
+                  onSavePattern={onSaveShiftPattern}
+                  onDeletePattern={onDeleteShiftPattern}
               />
           </Modal>
       )}

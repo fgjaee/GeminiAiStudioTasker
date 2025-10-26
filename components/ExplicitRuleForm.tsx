@@ -118,9 +118,10 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
 
   const handleExcludeDayChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const { options } = e.target;
+    // FIX: Cast option to HTMLOptionElement to access 'selected' and 'value' properties.
     const selectedDays = Array.from(options)
-      .filter(option => option.selected)
-      .map(option => option.value);
+      .filter(option => (option as HTMLOptionElement).selected)
+      .map(option => (option as HTMLOptionElement).value);
     setFormData(prev => ({ ...prev, exclude_day: selectedDays }));
   }, []);
 

@@ -201,7 +201,14 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
   lockedAssignmentsForDay.forEach(locked => {
     allAssignments.push(locked);
     const workload = dailyWorkloads.get(locked.memberId);
-    if (workload) workload.totalDuration += locked.duration;
+    if (workload) {
+      const task = taskMap.get(locked.taskId);
+      if (task?.task_type === 'upkeep') {
+        workload.upkeepDuration += locked.duration;
+      } else {
+        workload.totalDuration += locked.duration;
+      }
+    }
   });
   const assignedTaskIds = new Set(allAssignments.map(a => a.taskId));
 
@@ -234,7 +241,7 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
           unassignedReasons.add('no_skill');
           return false;
       }
-      if (workload.totalDuration + taskDuration > workload.capacity + settings.overCapacityThreshold) {
+      if (task.task_type !== 'upkeep' && (workload.totalDuration + taskDuration > workload.capacity + settings.overCapacityThreshold)) {
           unassignedReasons.add('capacity_full');
           return false;
       }
@@ -258,10 +265,14 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
         for (const member of eligibleMembers) {
             if (assignedCoverage >= (neededCoverage || 1)) break;
             const workload = dailyWorkloads.get(member.id)!;
-            if (workload.totalDuration + taskDuration <= workload.capacity + settings.overCapacityThreshold) {
+            if (task.task_type === 'upkeep' || (workload.totalDuration + taskDuration <= workload.capacity + settings.overCapacityThreshold)) {
                 const assignment = { id: uuid(), taskId: task.id, memberId: member.id, date: targetDate, startTime: task.earliest_start, endTime: minutesToTime(timeToMinutes(task.earliest_start) + taskDuration), duration: taskDuration, reason: "Assigned by skill and workload balance (coverage).", locked: false, status: 'assigned' as AssignmentStatus };
                 allAssignments.push(assignment);
-                workload.totalDuration += taskDuration;
+                if (task.task_type === 'upkeep') {
+                  workload.upkeepDuration += taskDuration;
+                } else {
+                  workload.totalDuration += taskDuration;
+                }
                 workload.assignedTasks.push(assignment);
                 assignedCoverage++;
                 assigned = true;
@@ -272,7 +283,11 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
         const workload = dailyWorkloads.get(assignedMember.id)!;
         const assignment = { id: uuid(), taskId: task.id, memberId: assignedMember.id, date: targetDate, startTime: task.earliest_start, endTime: minutesToTime(timeToMinutes(task.earliest_start) + taskDuration), duration: taskDuration, reason: "Assigned by skill and workload balance.", locked: false, status: 'assigned' as AssignmentStatus };
         allAssignments.push(assignment);
-        workload.totalDuration += taskDuration;
+        if (task.task_type === 'upkeep') {
+          workload.upkeepDuration += taskDuration;
+        } else {
+          workload.totalDuration += taskDuration;
+        }
         workload.assignedTasks.push(assignment);
         assigned = true;
     }

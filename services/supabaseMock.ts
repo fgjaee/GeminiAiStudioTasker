@@ -17,6 +17,7 @@ import {
   Availability,
   ShiftTemplate,
   PlannedShift,
+  ShiftPattern,
   ID, // FIX: Import ID type
 } from '../types';
 import { initialMockData, MOCK_DB_DELAY } from '../constants';
@@ -35,6 +36,7 @@ import {
   normalizeAvailability,
   normalizeShiftTemplates,
   normalizePlannedShifts,
+  normalizeShiftPatterns,
 } from '../utils/normalizers';
 import { uuid } from './utils'; // Ensure uuid is imported
 import { parseSchedulePdfMock } from './parsers/pdfMeijerKronos'; // Mock PDF parser
@@ -58,6 +60,7 @@ mockDatabase = {
   availability: normalizeAvailability(mockDatabase.availability),
   shift_templates: normalizeShiftTemplates(mockDatabase.shift_templates),
   planned_shifts: normalizePlannedShifts(mockDatabase.planned_shifts),
+  shift_patterns: normalizeShiftPatterns(mockDatabase.shift_patterns),
 };
 
 
@@ -103,6 +106,7 @@ export const supabaseMock = {
           case 'availability': normalizedData = normalizeAvailability(data as Availability[]) as unknown as T[]; break;
           case 'shift_templates': normalizedData = normalizeShiftTemplates(data as ShiftTemplate[]) as unknown as T[]; break;
           case 'planned_shifts': normalizedData = normalizePlannedShifts(data as PlannedShift[]) as unknown as T[]; break;
+          case 'shift_patterns': normalizedData = normalizeShiftPatterns(data as ShiftPattern[]) as unknown as T[]; break;
           default:
             console.warn(`Mock DB: Unknown table ${tableName}`);
             // FIX: Cast through unknown to satisfy the generic type T[].
@@ -139,6 +143,7 @@ export const supabaseMock = {
             case 'availability': normalizedRecord = normalizeAvailability([record as unknown as Availability])[0] as unknown as T; break;
             case 'shift_templates': normalizedRecord = normalizeShiftTemplates([record as unknown as ShiftTemplate])[0] as unknown as T; break;
             case 'planned_shifts': normalizedRecord = normalizePlannedShifts([record as unknown as PlannedShift])[0] as unknown as T; break;
+            case 'shift_patterns': normalizedRecord = normalizeShiftPatterns([record as unknown as ShiftPattern])[0] as unknown as T; break;
             default: normalizedRecord = record; break;
           }
 
@@ -239,6 +244,7 @@ export const supabaseMock = {
       availability: normalizeAvailability(mockDatabase.availability),
       shift_templates: normalizeShiftTemplates(mockDatabase.shift_templates),
       planned_shifts: normalizePlannedShifts(mockDatabase.planned_shifts),
+      shift_patterns: normalizeShiftPatterns(mockDatabase.shift_patterns),
     };
     console.log("Mock DB: Reset to initial state or imported data.");
   },

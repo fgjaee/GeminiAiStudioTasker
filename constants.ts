@@ -472,4 +472,5 @@ export const initialMockData: SupabaseTableData = {
     { id: uuid(), name: 'Closing Shift', start: '14:00', end: '22:00', shift_class: 'Closing', role_tags: ['Produce Clerk'] },
   ],
   planned_shifts: [],
+  shift_patterns: [],
 };

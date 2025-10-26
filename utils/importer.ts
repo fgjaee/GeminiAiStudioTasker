@@ -26,6 +26,7 @@ import {
   normalizeAvailability,
   normalizeShiftTemplates,
   normalizePlannedShifts,
+  normalizeShiftPatterns,
 } from './normalizers';
 
 /**
@@ -146,6 +147,7 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
     availability: normalizeAvailability([]),
     shift_templates: normalizeShiftTemplates([]),
     planned_shifts: normalizePlannedShifts([]),
+    shift_patterns: normalizeShiftPatterns([]),
   };
 
   return newSupabaseData;
@@ -197,6 +199,7 @@ export const importData = async (file: File): Promise<SupabaseTableData> => {
             availability: normalizeAvailability(parsedData.availability || []),
             shift_templates: normalizeShiftTemplates(parsedData.shift_templates || []),
             planned_shifts: normalizePlannedShifts(parsedData.planned_shifts || []),
+            shift_patterns: normalizeShiftPatterns(parsedData.shift_patterns || []),
           };
           resolve(normalizedData);
         } else {
