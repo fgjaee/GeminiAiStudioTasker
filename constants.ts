@@ -401,7 +401,27 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for IMS Audits (Quality Checks Rule)."
     }
   ],
-  weekly_schedule: [],
+  weekly_schedule: [
+    {
+      id: uuid(),
+      date: dayjs().format(DATE_FORMAT), // Add a schedule for the current day
+      shifts: [
+        { id: uuid(), memberId: 'm_marlon', start: '07:00', end: '15:00', shift_class: 'Opening' },
+        { id: uuid(), memberId: 'm_sandra', start: '06:00', end: '14:00', shift_class: 'Opening' },
+        { id: uuid(), memberId: 'm_deb', start: '14:00', end: '22:00', shift_class: 'Closing' },
+        { id: uuid(), memberId: 'm_heidi', start: '14:00', end: '22:00', shift_class: 'Closing' },
+        { id: uuid(), memberId: 'm_john', start: '08:00', end: '16:00', shift_class: 'Mid-Shift' },
+        { id: uuid(), memberId: 'm_james', start: '09:00', end: '17:00', shift_class: 'Mid-Shift' },
+        { id: uuid(), memberId: 'm_william', start: '08:00', end: '16:00', shift_class: 'Mid-Shift' },
+        { id: uuid(), memberId: 'm_nabil', start: '15:00', end: '22:00', shift_class: 'Closing' },
+        { id: uuid(), memberId: 'm_barry', start: '15:00', end: '22:00', shift_class: 'Closing' },
+        { id: uuid(), memberId: 'm_victoria', start: '15:00', end: '22:00', shift_class: 'Closing' },
+        { id: uuid(), memberId: 'm_alice', start: '06:00', end: '14:30', shift_class: 'Opening' },
+        { id: uuid(), memberId: 'm_bob', start: '09:00', end: '17:30', shift_class: 'Mid-Shift' },
+        { id: uuid(), memberId: 'm_charlie', start: '07:00', end: '15:30', shift_class: 'Opening' },
+      ]
+    }
+  ],
   assignments: [],
   templates: [
     {

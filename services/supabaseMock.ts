@@ -41,27 +41,45 @@ import {
 import { uuid } from './utils'; // Ensure uuid is imported
 import { parseSchedulePdfMock } from './parsers/pdfMeijerKronos'; // Mock PDF parser
 
-// In-memory mock database
-let mockDatabase: SupabaseTableData = JSON.parse(JSON.stringify(initialMockData));
+const LOCAL_STORAGE_KEY = 'worklist_automator_db';
 
-// Apply normalizers to initial data to ensure all IDs are present
-mockDatabase = {
-  members: normalizeMembers(mockDatabase.members),
-  tasks: normalizeTasks(mockDatabase.tasks),
-  explicit_rules: normalizeRules(mockDatabase.explicit_rules),
-  weekly_schedule: normalizeWeeklySchedule(mockDatabase.weekly_schedule),
-  assignments: normalizeAssignments(mockDatabase.assignments),
-  templates: normalizeTemplates(mockDatabase.templates),
-  manager_settings: normalizeManagerSettings(mockDatabase.manager_settings),
-  areas: normalizeAreas(mockDatabase.areas),
-  order_sets: normalizeOrderSets(mockDatabase.order_sets),
-  order_set_items: normalizeOrderSetItems(mockDatabase.order_set_items),
-  staffing_targets: normalizeStaffingTargets(mockDatabase.staffing_targets),
-  availability: normalizeAvailability(mockDatabase.availability),
-  shift_templates: normalizeShiftTemplates(mockDatabase.shift_templates),
-  planned_shifts: normalizePlannedShifts(mockDatabase.planned_shifts),
-  shift_patterns: normalizeShiftPatterns(mockDatabase.shift_patterns),
+// Function to load from local storage
+const loadDatabaseFromStorage = (): SupabaseTableData | null => {
+  try {
+    const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (storedData) {
+      return JSON.parse(storedData);
+    }
+    return null;
+  } catch (error) {
+    console.error("Failed to load data from localStorage", error);
+    localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear corrupted data
+    return null;
+  }
 };
+
+// Function to save to local storage
+const saveDatabaseToStorage = (db: SupabaseTableData) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
+  } catch (error) {
+    console.error("Failed to save data to localStorage", error);
+  }
+};
+
+
+// In-memory mock database
+let mockDatabase: SupabaseTableData;
+const storedDb = loadDatabaseFromStorage();
+
+if (storedDb) {
+  mockDatabase = storedDb;
+  console.log("Mock DB: Loaded from localStorage.");
+} else {
+  mockDatabase = JSON.parse(JSON.stringify(initialMockData));
+  saveDatabaseToStorage(mockDatabase);
+  console.log("Mock DB: Initialized with default data and saved to localStorage.");
+}
 
 
 // --- Helper to deep clone data (to prevent direct mutation of mockDatabase state) ---
@@ -159,6 +177,7 @@ export const supabaseMock = {
             table.push(normalizedRecord);
           }
         });
+        saveDatabaseToStorage(mockDatabase); // Persist changes
         // FIX: Cast recordsArray through unknown to satisfy return type T[].
         return { data: recordsArray as unknown as T[], error: null };
       },
@@ -168,6 +187,7 @@ export const supabaseMock = {
         const initialLength = mockDatabase[tableName].length;
         // FIX: Cast mockDatabase[tableName] to `any[]` to allow filtering on a union type.
         (mockDatabase[tableName] as any) = (mockDatabase[tableName] as any[]).filter((r: any) => r.id !== id);
+        saveDatabaseToStorage(mockDatabase); // Persist changes
 
         if (mockDatabase[tableName].length < initialLength) {
           return { data: { id }, error: null };
@@ -246,6 +266,7 @@ export const supabaseMock = {
       planned_shifts: normalizePlannedShifts(mockDatabase.planned_shifts),
       shift_patterns: normalizeShiftPatterns(mockDatabase.shift_patterns),
     };
+    saveDatabaseToStorage(mockDatabase); // Persist reset state
     console.log("Mock DB: Reset to initial state or imported data.");
   },
 };
