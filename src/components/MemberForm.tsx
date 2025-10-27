@@ -4,6 +4,7 @@ import { Member, ID, ShiftClass, Skill, MemberSkill } from '../types';
 import Input from './Input';
 import ChipInput from './ChipInput';
 import Button from './Button';
+import Select from './Select';
 import { uuid } from '../services/utils';
 
 interface MemberFormProps {
@@ -16,7 +17,7 @@ interface MemberFormProps {
 }
 
 const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, existingMembers, allSkills, memberSkills }) => {
-  const [formData, setFormData] = useState<Member>({
+  const [formData, setFormData] = useState<Member>(member || {
     id: uuid(),
     name: '',
     title: '',
@@ -28,9 +29,9 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, exist
   
   useEffect(() => {
     if (member) {
-      const currentSkillIds = memberSkills
-          .filter(ms => ms.member_id === member.id)
-          .map(ms => ms.skill_id);
+        const currentSkillIds = memberSkills
+            .filter(ms => ms.member_id === member.id)
+            .map(ms => ms.skill_id);
       setFormData({...member, skill_ids: currentSkillIds});
     } else {
       setFormData({
@@ -45,8 +46,9 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, exist
   }, []);
 
   const handleSkillChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedIds = Array.from(e.target.selectedOptions, option => option.value);
-    setFormData(prev => ({...prev, skill_ids: selectedIds}));
+      // FIX: Cast option to HTMLOptionElement to access the 'value' property correctly.
+      const selectedIds = Array.from((e.target as HTMLSelectElement).selectedOptions, option => (option as HTMLOptionElement).value);
+      setFormData(prev => ({...prev, skill_ids: selectedIds}));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,7 +57,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, exist
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 bg-card rounded-lg space-y-4">
+    <form onSubmit={handleSubmit} className="p-4 bg-card rounded-lg">
       <Input id="name" label="Member Name" value={formData.name} onChange={handleChange} required />
       <Input id="title" label="Title" value={formData.title || ''} onChange={handleChange} />
       <ChipInput
@@ -65,7 +67,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, exist
         onAddChip={chip => setFormData(p => ({ ...p, role_tags: [...p.role_tags, chip] }))}
         onRemoveChip={chip => setFormData(p => ({ ...p, role_tags: p.role_tags.filter(c => c !== chip) }))}
       />
-      <div>
+      <div className="mb-4">
         <label htmlFor="skill_ids" className="block text-sm font-medium text-textdark mb-1">Skills (Hold Ctrl/Cmd to select multiple)</label>
         <select
             id="skill_ids"
@@ -90,7 +92,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, exist
       />
       <div className="flex justify-end space-x-2 mt-4">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" variant="primary">Save Member</Button>
+        <Button type="submit">Save Member</Button>
       </div>
     </form>
   );

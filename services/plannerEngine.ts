@@ -1,5 +1,5 @@
 // services/plannerService.ts
-import { PlannerConflict, PlannedShift, WeeklyScheduleDay, Member, Task, Area, StaffingTarget, Availability, ShiftTemplate, ManagerSettings, ScheduleShift, ShiftClass } from "../types";
+import { PlannerConflict, PlannedShift, WeeklyScheduleDay, Member, Task, Area, StaffingTarget, Availability, ShiftTemplate, ManagerSettings, ScheduleShift, ShiftClass, Skill } from "../types";
 import { uuid } from "../utils/helpers";
 import dayjs from "dayjs";
 import isBetween from 'dayjs/plugin/isBetween';
@@ -17,6 +17,7 @@ export interface plannerEngineMockInput {
     settings: ManagerSettings;
     targetDates: string[];
     currentWeeklySchedule: WeeklyScheduleDay[];
+    skills: Skill[]; // Add skills to resolve names from IDs
 }
 
 export interface plannerEngineMockOutput {
@@ -26,7 +27,7 @@ export interface plannerEngineMockOutput {
 }
 
 export const autoFillSchedule = async (input: plannerEngineMockInput): Promise<plannerEngineMockOutput> => {
-    const { members, staffingTargets, targetDates } = input;
+    const { members, staffingTargets, targetDates, skills } = input;
     const generatedPlannedShifts: PlannedShift[] = JSON.parse(JSON.stringify(input.plannedShifts));
     
     const workloadTracker: { [memberId: string]: { daily: { [date: string]: number }, weekly: number } } = {};
@@ -41,6 +42,7 @@ export const autoFillSchedule = async (input: plannerEngineMockInput): Promise<p
     });
 
     const areaMap = new Map(input.areas.map(a => [a.id, a]));
+    const skillMap = new Map(skills.map(s => [s.id, s.name]));
 
     for (const date of targetDates) {
         const dayOfWeek = dayjs(date).format('ddd');
@@ -80,7 +82,9 @@ export const autoFillSchedule = async (input: plannerEngineMockInput): Promise<p
                 let score = 100;
                 const area = areaMap.get(target.area_id);
                 
-                if (area && member.strengths.includes(area.name)) score += 50;
+                // FIX: Use skill_ids and map to names for check
+                const memberSkillNames = new Set((member.skill_ids || []).map(id => skillMap.get(id)));
+                if (area && memberSkillNames.has(area.name)) score += 50;
 
                 let shiftClass: ShiftClass | undefined;
                 if (targetStart.hour() < 9) shiftClass = 'Opening';
@@ -206,8 +210,10 @@ export const publishPlannedShiftsMock = (
             const day = publishedScheduleMap.get(date);
             if (day) {
                 day.shifts = newScheduleShifts;
+                // FIX: Add flags property to match type
                 day.flags = { ...day.flags, source: 'planner', timestamp: new Date().toISOString() };
             } else {
+                // FIX: Add flags property to match type
                 publishedScheduleMap.set(date, { id: uuid(), date, shifts: newScheduleShifts, flags: { source: 'planner', timestamp: new Date().toISOString() } });
             }
         }

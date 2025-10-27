@@ -1,13 +1,16 @@
 import {
+  // FIX: Import SupabaseTableData
   SupabaseTableData,
   Task,
   ExplicitRule,
+  // FIX: Import OldBackupData, OldTask, OldExplicitRule
   OldBackupData,
   OldTask,
   OldExplicitRule,
   PrimarySelector,
   RecurrenceType,
   TaskType,
+  Member,
 } from '../types';
 import { uuid } from './helpers';
 import dayjs from 'dayjs';
@@ -70,7 +73,7 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
       code: code,
       name: oldTask.name,
       description: '', // Old data doesn't have this, default to empty
-      skill_required: skillRequiredArray,
+      skill_ids: [], // We don't have skill IDs here, would need to map from names
       priority_weight: oldTask.order,
       earliest_start: '00:00', // Default if not specified in old data
       due_by: oldTask.deadline === 'EOD' ? '17:00' : oldTask.deadline, // Map 'EOD' to 17:00
@@ -98,9 +101,10 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
 
     const primarySelector: PrimarySelector = oldRule.primaryMemberId
       ? { id: uuid(), mode: 'member', value: oldRule.primaryMemberId }
+      // FIX: Use 'role_tag' instead of invalid 'tag'
       : (oldRule.skillRequired
-        ? { id: uuid(), mode: 'tag', value: oldRule.skillRequired }
-        : { id: uuid(), mode: 'tag', value: 'unspecified' }); // Default if no primary member/skill
+        ? { id: uuid(), mode: 'role_tag', value: oldRule.skillRequired }
+        : { id: uuid(), mode: 'role_tag', value: 'unspecified' }); // Default if no primary member/skill
 
     const fallbackSelectors: PrimarySelector[] = (oldRule.fallbacks || []).map(memberId => ({
       id: uuid(),
@@ -110,10 +114,10 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
 
     return {
       id: uuid(),
-      taskId: taskId,
+      task_id: taskId,
       primary_selector: primarySelector,
       fallback_selectors: fallbackSelectors,
-      exclude_day: oldRule.excludeDay ? [oldRule.excludeDay] : [], // Convert single string to array
+      exclude_day: oldRule.excludeDay ? [oldRule.excludeDay as 'Sun'|'Mon'|'Tue'|'Wed'|'Thu'|'Fri'|'Sat'] : [], // Convert single string to array
       max_per_member_per_day: undefined, // Not in old data
       prefer_shift_class: undefined, // Not in old data
       earliest_start: undefined, // Not in old data
@@ -130,10 +134,10 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
       name: om.name,
       title: om.role || 'Team Member',
       role_tags: om.role ? [om.role] : [],
-      strengths: om.skills || [],
+      skill_ids: [], // Would need to map from om.skills
       fixed_commitments_minutes: 0,
       default_tasks: [],
-    }))),
+    })) as Member[]),
     tasks: normalizeTasks(transformedTasks),
     explicit_rules: normalizeRules(transformedRules),
     weekly_schedule: normalizeWeeklySchedule([]), // Old data had empty schedule, or different format
@@ -148,6 +152,9 @@ export const transformOldBackupToSupabaseData = (oldData: OldBackupData): Supaba
     shift_templates: normalizeShiftTemplates([]),
     planned_shifts: normalizePlannedShifts([]),
     shift_patterns: normalizeShiftPatterns([]),
+    skills: [],
+    member_skills: [],
+    member_aliases: [],
   };
 
   return newSupabaseData;
@@ -200,6 +207,9 @@ export const importData = async (file: File): Promise<SupabaseTableData> => {
             shift_templates: normalizeShiftTemplates(parsedData.shift_templates || []),
             planned_shifts: normalizePlannedShifts(parsedData.planned_shifts || []),
             shift_patterns: normalizeShiftPatterns(parsedData.shift_patterns || []),
+            skills: parsedData.skills || [],
+            member_skills: parsedData.member_skills || [],
+            member_aliases: parsedData.member_aliases || [],
           };
           resolve(normalizedData);
         } else {

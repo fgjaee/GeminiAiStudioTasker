@@ -1,4 +1,5 @@
 // services/parsers/ukgCsv.ts
+// FIX: Import ParsedScheduleData
 import { ParsedScheduleData, ParsedScheduleShift } from '../../types';
 import { uuid, normName, to24h } from '../utils';
 import dayjs from 'dayjs';

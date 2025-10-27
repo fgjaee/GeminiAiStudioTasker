@@ -1,4 +1,5 @@
 // services/pdfParserService.ts
+// FIX: Import ParsedScheduleData type
 import { ParsedScheduleData, ParsedScheduleShift, ShiftClass } from '../types';
 import { DATE_FORMAT, PDF_MOCK_TIMEOUT, SHORT_WEEKDAY_NAMES } from '../constants';
 // FIX: Import 'generateChecksum' to resolve the error.

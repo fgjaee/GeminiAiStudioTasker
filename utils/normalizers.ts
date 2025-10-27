@@ -29,7 +29,8 @@ const normalizeSelector = (selector: PrimarySelector): PrimarySelector => ({
 
 export const normalizeRules = (items: ExplicitRule[]): ExplicitRule[] => normalizeArray(items).map(r => ({
     ...r,
-    primary_selector: r.primary_selector ? normalizeSelector(r.primary_selector) : { id: uuid(), mode: 'tag', value: '' },
+    // FIX: Use 'role_tag' to match the type definition instead of 'tag'.
+    primary_selector: r.primary_selector ? normalizeSelector(r.primary_selector) : { id: uuid(), mode: 'role_tag', value: '' },
     fallback_selectors: (r.fallback_selectors || []).map(normalizeSelector),
 }));
 

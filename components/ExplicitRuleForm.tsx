@@ -7,7 +7,7 @@ import Button from './Button';
 import Textarea from './Textarea'; // Import Textarea
 import { Plus, Trash2 } from 'lucide-react';
 import { uuid, assertUniqueKeys } from '../utils/helpers'; // Ensure uuid and assertUniqueKeys are imported
-import { WEEKDAY_NAMES } from '../constants';
+import { SHORT_WEEKDAY_NAMES } from '../constants';
 
 interface ExplicitRuleFormProps {
   rule?: ExplicitRule | null;
@@ -17,7 +17,7 @@ interface ExplicitRuleFormProps {
   tasks: Task[];
 }
 
-const weekdayOptions = WEEKDAY_NAMES.map(day => ({ value: day, label: day }));
+const weekdayOptions = SHORT_WEEKDAY_NAMES.map(day => ({ value: day, label: day }));
 const shiftClassOptions: { value: ShiftClass | undefined; label: string }[] = [
     { value: undefined, label: 'No Preference' },
     { value: 'Opening', label: 'Opening' },
@@ -31,12 +31,12 @@ const shiftClassOptions: { value: ShiftClass | undefined; label: string }[] = [
 const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCancel, members, tasks }) => {
   const [formData, setFormData] = useState<ExplicitRule>(rule || {
     id: uuid(),
-    taskId: '',
-    primary_selector: { id: uuid(), mode: 'tag', value: '' },
+    task_id: '',
+    primary_selector: { id: uuid(), mode: 'role_tag', value: '' },
     fallback_selectors: [],
     exclude_day: [],
-    max_per_member_per_day: null, // Default to null
-    prefer_shift_class: undefined, // Default to undefined
+    max_per_member_per_day: undefined,
+    prefer_shift_class: undefined, 
     earliest_start: undefined,
     due_by: undefined,
     reason_template: 'Assigned automatically by rule.',
@@ -48,11 +48,11 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
     } else {
       setFormData({
         id: uuid(),
-        taskId: '',
-        primary_selector: { id: uuid(), mode: 'tag', value: '' },
+        task_id: '',
+        primary_selector: { id: uuid(), mode: 'role_tag', value: '' },
         fallback_selectors: [],
         exclude_day: [],
-        max_per_member_per_day: null,
+        max_per_member_per_day: undefined,
         prefer_shift_class: undefined,
         earliest_start: undefined,
         due_by: undefined,
@@ -66,7 +66,10 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
   const allRoleTags = useMemo(() => {
     const tags = new Set<string>();
     members.forEach(m => m.role_tags.forEach(tag => tags.add(tag)));
-    tasks.forEach(t => (t.skill_required || []).forEach(skill => tags.add(skill))); // Also consider skills as tags
+    tasks.forEach(t => (t.skill_ids || []).forEach(skillId => {
+      // This part is tricky as skill_ids are IDs. We'd need a skill map to get names.
+      // For now, let's just stick to member role_tags.
+    }));
     return Array.from(tags).sort().map(tag => ({ value: tag, label: tag }));
   }, [members, tasks]);
 
@@ -74,7 +77,7 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
     const { id, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [id]: type === 'number' ? (value === '' ? null : parseFloat(value) || 0) : value,
+      [id]: type === 'number' ? (value === '' ? undefined : parseFloat(value) || 0) : value,
     }));
   }, []);
 
@@ -90,13 +93,15 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
         primary_selector: {
           ...prev.primary_selector,
           [field]: value,
+          // Reset value when mode changes
+          ...(field === 'mode' && { value: '' }),
         },
       }));
     } else {
       setFormData(prev => ({
         ...prev,
         fallback_selectors: prev.fallback_selectors?.map(s =>
-          s.id === selectorId ? { ...s, [field]: value } : s
+          s.id === selectorId ? { ...s, [field]: value, ...(field === 'mode' && { value: '' }) } : s
         ),
       }));
     }
@@ -105,7 +110,7 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
   const handleAddFallback = useCallback(() => {
     setFormData(prev => ({
       ...prev,
-      fallback_selectors: [...(prev.fallback_selectors || []), { id: uuid(), mode: 'tag', value: '' }],
+      fallback_selectors: [...(prev.fallback_selectors || []), { id: uuid(), mode: 'role_tag', value: '' }],
     }));
   }, []);
 
@@ -121,13 +126,13 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
     // FIX: Cast option to HTMLOptionElement to access 'selected' and 'value' properties.
     const selectedDays = Array.from(options)
       .filter(option => (option as HTMLOptionElement).selected)
-      .map(option => (option as HTMLOptionElement).value);
+      .map(option => (option as HTMLOptionElement).value) as ExplicitRule['exclude_day'];
     setFormData(prev => ({ ...prev, exclude_day: selectedDays }));
   }, []);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.taskId) {
+    if (!formData.task_id) {
         alert('Please select a task.');
         return;
     }
@@ -143,14 +148,20 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
     assertUniqueKeys(formData.fallback_selectors?.map(f => f.id) || [], "ExplicitRuleForm.fallback_selectors");
   }
 
+  const getSelectorOptions = (mode: PrimarySelector['mode']) => {
+      if (mode === 'member') return memberOptions;
+      if (mode === 'skill') return []; // TODO: Add skill options
+      return allRoleTags;
+  }
+
   return (
     <form onSubmit={handleSubmit} className="p-4 bg-card rounded-lg">
       <Select
-        id="taskId"
+        id="task_id"
         label="Task"
         options={taskOptions}
-        value={formData.taskId}
-        onChange={handleChange}
+        value={formData.task_id}
+        onChange={(e) => handleChange(e)}
         required
       />
 
@@ -161,35 +172,22 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
           label="Mode"
           options={[
             { value: 'member', label: 'Specific Member' },
-            { value: 'tag', label: 'Role/Skill Tag' },
+            { value: 'role_tag', label: 'Role/Skill Tag' },
           ]}
           value={formData.primary_selector.mode}
           onChange={(e) => handleSelectorChange('primary_selector', formData.primary_selector.id, 'mode', e.target.value)}
           className="flex-1"
           required
         />
-        {formData.primary_selector.mode === 'member' && (
-          <Select
+        <Select
             id="primary_selector_value"
-            label="Member"
-            options={memberOptions}
+            label="Value"
+            options={getSelectorOptions(formData.primary_selector.mode)}
             value={formData.primary_selector.value}
             onChange={(e) => handleSelectorChange('primary_selector', formData.primary_selector.id, 'value', e.target.value)}
             className="flex-1"
             required
-          />
-        )}
-        {formData.primary_selector.mode === 'tag' && (
-          <Select
-            id="primary_selector_value"
-            label="Tag"
-            options={allRoleTags}
-            value={formData.primary_selector.value}
-            onChange={(e) => handleSelectorChange('primary_selector', formData.primary_selector.id, 'value', e.target.value)}
-            className="flex-1"
-            required
-          />
-        )}
+        />
       </div>
 
       <h3 className="text-md font-semibold text-textdark mt-4 mb-2">Fallback Selectors</h3>
@@ -200,35 +198,22 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
             label="Mode"
             options={[
               { value: 'member', label: 'Specific Member' },
-              { value: 'tag', label: 'Role/Skill Tag' },
+              { value: 'role_tag', label: 'Role/Skill Tag' },
             ]}
             value={selector.mode}
             onChange={(e) => handleSelectorChange('fallback_selectors', selector.id, 'mode', e.target.value)}
             className="flex-1"
             required
           />
-          {selector.mode === 'member' && (
-            <Select
+           <Select
               id={`fallback_value_${selector.id}`}
-              label="Member"
-              options={memberOptions}
+              label="Value"
+              options={getSelectorOptions(selector.mode)}
               value={selector.value}
               onChange={(e) => handleSelectorChange('fallback_selectors', selector.id, 'value', e.target.value)}
               className="flex-1"
               required
             />
-          )}
-          {selector.mode === 'tag' && (
-            <Select
-              id={`fallback_value_${selector.id}`}
-              label="Tag"
-              options={allRoleTags}
-              value={selector.value}
-              onChange={(e) => handleSelectorChange('fallback_selectors', selector.id, 'value', e.target.value)}
-              className="flex-1"
-              required
-            />
-          )}
           <Button type="button" variant="danger" size="sm" onClick={() => handleRemoveFallback(selector.id)} title="Remove Fallback">
             <Trash2 size={16} />
           </Button>
@@ -251,7 +236,7 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
         id="max_per_member_per_day"
         label="Max times per member per day (leave empty for no limit)"
         type="number"
-        value={formData.max_per_member_per_day === null ? '' : formData.max_per_member_per_day}
+        value={formData.max_per_member_per_day ?? ''}
         onChange={handleChange}
         min="0"
       />
@@ -281,11 +266,11 @@ const ExplicitRuleForm: React.FC<ExplicitRuleFormProps> = ({ rule, onSave, onCan
         label="Reason Template for Assignment (Handlebars-like syntax)"
         value={formData.reason_template}
         onChange={handleChange}
-        rows={5}
+        rows={2}
         placeholder="e.g., Assigned to {{memberName}} by {{ruleName}} rule."
       />
        <p className="text-xs text-gray-500 mt-1">
-        Use placeholders like <code>{'{{memberName}}'}</code>, <code>{'{{ruleName}}'}</code>.
+        Use placeholders like <code>{'{{memberName}}'}</code>.
       </p>
 
       <div className="flex justify-end space-x-2 mt-4">

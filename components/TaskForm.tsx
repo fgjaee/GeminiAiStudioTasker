@@ -34,7 +34,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
     code: '',
     name: '',
     description: '',
-    skill_required: [],
+    // FIX: Rename skill_required to skill_ids
+    skill_ids: [],
     priority_weight: 50,
     earliest_start: '07:00',
     due_by: '17:00',
@@ -57,7 +58,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
         code: '',
         name: '',
         description: '',
-        skill_required: [],
+        skill_ids: [],
         priority_weight: 50,
         earliest_start: '07:00',
         due_by: '17:00',
@@ -98,7 +99,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
   const handleSkillChange = useCallback((skills: string[]) => {
     setFormData(prev => ({
       ...prev,
-      skill_required: skills,
+      skill_ids: skills,
     }));
   }, []);
 
@@ -150,11 +151,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
         onChange={handleChange}
       />
       <ChipInput
-        id="skill_required"
+        id="skill_ids"
         label="Required Skills (e.g., Ordering, Lifting)"
-        chips={formData.skill_required}
-        onAddChip={chip => handleSkillChange([...formData.skill_required, chip])}
-        onRemoveChip={chip => handleSkillChange(formData.skill_required.filter(s => s !== chip))}
+        chips={formData.skill_ids as any[]}
+        onAddChip={chip => handleSkillChange([...(formData.skill_ids || []), chip])}
+        onRemoveChip={chip => handleSkillChange((formData.skill_ids || []).filter(s => s !== chip))}
         placeholder="Add a skill..."
       />
       <Select

@@ -18,7 +18,10 @@ import {
   ShiftTemplate,
   PlannedShift,
   ShiftPattern,
-  ID, // FIX: Import ID type
+  ID, 
+  Skill,
+  MemberSkill,
+  MemberAlias,
 } from '../types';
 import { initialMockData, MOCK_DB_DELAY } from '../constants';
 import {
@@ -38,8 +41,8 @@ import {
   normalizePlannedShifts,
   normalizeShiftPatterns,
 } from '../utils/normalizers';
-import { uuid } from './utils'; // Ensure uuid is imported
-import { parseSchedulePdfMock } from './parsers/pdfMeijerKronos'; // Mock PDF parser
+import { uuid } from '../utils/helpers';
+import { parseSchedulePdfMock } from './pdfParserMock_legacy'; // Mock PDF parser
 
 const LOCAL_STORAGE_KEY = 'worklist_automator_db';
 
@@ -102,7 +105,7 @@ export const supabaseMock = {
   },
 
   // Mock Database Service
-  from: <T extends { id: ID }>(tableName: SupabaseTableName) => {
+  from: <T extends { id?: ID }>(tableName: SupabaseTableName) => {
     return {
       select: async () => {
         await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
@@ -125,9 +128,11 @@ export const supabaseMock = {
           case 'shift_templates': normalizedData = normalizeShiftTemplates(data as ShiftTemplate[]) as unknown as T[]; break;
           case 'planned_shifts': normalizedData = normalizePlannedShifts(data as PlannedShift[]) as unknown as T[]; break;
           case 'shift_patterns': normalizedData = normalizeShiftPatterns(data as ShiftPattern[]) as unknown as T[]; break;
+          case 'skills': normalizedData = data as unknown as T[]; break; // Assuming no special normalization needed for now
+          case 'member_skills': normalizedData = data as unknown as T[]; break;
+          case 'member_aliases': normalizedData = data as unknown as T[]; break;
           default:
             console.warn(`Mock DB: Unknown table ${tableName}`);
-            // FIX: Cast through unknown to satisfy the generic type T[].
             normalizedData = data as unknown as T[]; // Fallback
             break;
         }
@@ -139,13 +144,12 @@ export const supabaseMock = {
         console.log(`Mock DB: Upserting into ${tableName}`, recordsArray);
 
         recordsArray.forEach(record => {
-          if (!record.id) {
+          if ('id' in record && !record.id) {
             record.id = uuid(); // Assign ID if new
           }
 
           // Apply normalization before storing to ensure consistency
           let normalizedRecord: T;
-          // FIX: Cast the generic `record` through `unknown` to the specific type for normalization.
           switch (tableName) {
             case 'members': normalizedRecord = normalizeMembers([record as unknown as Member])[0] as unknown as T; break;
             case 'tasks': normalizedRecord = normalizeTasks([record as unknown as Task])[0] as unknown as T; break;
@@ -162,30 +166,29 @@ export const supabaseMock = {
             case 'shift_templates': normalizedRecord = normalizeShiftTemplates([record as unknown as ShiftTemplate])[0] as unknown as T; break;
             case 'planned_shifts': normalizedRecord = normalizePlannedShifts([record as unknown as PlannedShift])[0] as unknown as T; break;
             case 'shift_patterns': normalizedRecord = normalizeShiftPatterns([record as unknown as ShiftPattern])[0] as unknown as T; break;
+            case 'skills': normalizedRecord = record as unknown as T; break;
+            case 'member_skills': normalizedRecord = record as unknown as T; break;
+            case 'member_aliases': normalizedRecord = record as unknown as T; break;
             default: normalizedRecord = record; break;
           }
 
-          // FIX: Cast mockDatabase[tableName] to `any` to allow indexing and modification.
           const table = mockDatabase[tableName] as any[];
-          const index = table.findIndex((r: { id: string }) => r.id === normalizedRecord.id);
+          // @ts-ignore
+          const index = 'id' in normalizedRecord ? table.findIndex((r: { id: string }) => r.id === normalizedRecord.id) : -1;
 
           if (index > -1) {
-            // Update existing record
             table[index] = normalizedRecord;
           } else {
-            // Insert new record
             table.push(normalizedRecord);
           }
         });
         saveDatabaseToStorage(mockDatabase); // Persist changes
-        // FIX: Cast recordsArray through unknown to satisfy return type T[].
         return { data: recordsArray as unknown as T[], error: null };
       },
       delete: async (id: ID) => {
         await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
         console.log(`Mock DB: Deleting from ${tableName} with ID ${id}`);
         const initialLength = mockDatabase[tableName].length;
-        // FIX: Cast mockDatabase[tableName] to `any[]` to allow filtering on a union type.
         (mockDatabase[tableName] as any) = (mockDatabase[tableName] as any[]).filter((r: any) => r.id !== id);
         saveDatabaseToStorage(mockDatabase); // Persist changes
 
@@ -193,6 +196,25 @@ export const supabaseMock = {
           return { data: { id }, error: null };
         }
         return { data: null, error: new Error(`Record with ID ${id} not found in ${tableName}`) };
+      },
+      deleteMatch: async (query: object) => {
+        await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
+        console.log(`Mock DB: Deleting from ${tableName} with query`, query);
+        const initialLength = mockDatabase[tableName].length;
+        (mockDatabase[tableName] as any) = (mockDatabase[tableName] as any[]).filter((r: any) => {
+          for (const key in query) {
+            if (r[key] !== (query as any)[key]) {
+              return true; // Keep if it doesn't match
+            }
+          }
+          return false; // Discard if all keys match
+        });
+        saveDatabaseToStorage(mockDatabase); // Persist changes
+
+        if (mockDatabase[tableName].length < initialLength) {
+          return { error: null };
+        }
+        return { error: new Error(`Record with query ${JSON.stringify(query)} not found in ${tableName}`) };
       },
     };
   },
@@ -265,6 +287,9 @@ export const supabaseMock = {
       shift_templates: normalizeShiftTemplates(mockDatabase.shift_templates),
       planned_shifts: normalizePlannedShifts(mockDatabase.planned_shifts),
       shift_patterns: normalizeShiftPatterns(mockDatabase.shift_patterns),
+      skills: mockDatabase.skills || [],
+      member_skills: mockDatabase.member_skills || [],
+      member_aliases: mockDatabase.member_aliases || [],
     };
     saveDatabaseToStorage(mockDatabase); // Persist reset state
     console.log("Mock DB: Reset to initial state or imported data.");

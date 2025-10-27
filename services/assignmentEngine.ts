@@ -14,7 +14,8 @@ import {
   OrderSetItem,
   RecurrenceType,
 } from '../types';
-import { calculateDuration, timeToMinutes, minutesToTime, uuid } from './utils';
+// FIX: import `calculateDuration`, `timeToMinutes`, `minutesToTime`, and `uuid` from the correct path.
+import { calculateDuration, timeToMinutes, minutesToTime, uuid } from '../utils/helpers';
 import { WEEKDAY_NAMES, SHORT_WEEKDAY_NAMES } from '../constants'; // Import WEEKDAY_NAMES
 
 // --- Input Interface for Assignment Engine ---
@@ -89,17 +90,17 @@ const buildOrderedTasks = (
     tasks: Task[], 
     explicitRules: ExplicitRule[],
     activeOrderSetItems: OrderSetItem[], 
-    dayOfWeek: string,
+    dayOfWeek: 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat',
     startTime: string
 ): Task[] => {
     const activeSetMap = new Map(activeOrderSetItems.map((item, index) => [item.task_id, item.position]));
     const ruleExclusionsByDay = new Map<string, Set<string>>();
     explicitRules.forEach(rule => {
         if (rule.exclude_day?.includes(dayOfWeek)) {
-            if (!ruleExclusionsByDay.has(rule.taskId)) {
-                ruleExclusionsByDay.set(rule.taskId, new Set());
+            if (!ruleExclusionsByDay.has(rule.task_id)) {
+                ruleExclusionsByDay.set(rule.task_id, new Set());
             }
-            ruleExclusionsByDay.get(rule.taskId)!.add(dayOfWeek);
+            ruleExclusionsByDay.get(rule.task_id)!.add(dayOfWeek);
         }
     });
 
@@ -167,6 +168,8 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
 
   const rng = seedrandom(`${settings.tieBreakSeed}-${targetDate}`);
   const currentDayOfWeekFull = dayjs(targetDate).format('dddd');
+  // FIX: Use short day name for consistency with rules and recurrence data.
+  const currentDayOfWeekShort = dayjs(targetDate).format('ddd') as 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
   const scheduleDay = weeklySchedule.find(sd => sd.date === targetDate);
 
   // PASS 0: Validate schedule
@@ -216,7 +219,7 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
   const activeOrderSet = orderSets.find(os => os.scope === 'global' || (os.scope === 'weekday' && os.weekday === currentDayOfWeekFull));
   const activeOrderSetItems = activeOrderSet ? orderSetItems.filter(i => i.order_set_id === activeOrderSet.id) : [];
   
-  const orderedTasks = buildOrderedTasks(tasks, explicitRules, activeOrderSetItems, currentDayOfWeekFull, settings.assignmentStartTime)
+  const orderedTasks = buildOrderedTasks(tasks, explicitRules, activeOrderSetItems, currentDayOfWeekShort, settings.assignmentStartTime)
     .filter(t => !assignedTaskIds.has(t.id));
 
   // Main Assignment Loop (combines passes 1, 2, 3)
@@ -226,7 +229,8 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
     let assigned = false;
     
     const taskDuration = task.estimated_duration || 0;
-    const rule = explicitRules.find(r => r.taskId === task.id && !r.exclude_day?.includes(currentDayOfWeekFull));
+    // FIX: Rename taskId to task_id to match type definition
+    const rule = explicitRules.find(r => r.task_id === task.id && !r.exclude_day?.includes(currentDayOfWeekShort));
 
     if (!unassignedTasksMap.has(task.id)) {
         unassignedTasksMap.set(task.id, { task, reasons: new Set() });
@@ -237,7 +241,9 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
     const eligibleMembers = members.filter(member => {
       const workload = dailyWorkloads.get(member.id);
       if (!workload || workload.capacity <= 0) return false;
-      if ((task.skill_required || []).some(skill => !(member.strengths || []).includes(skill))) {
+      // FIX: Use skill_ids instead of skill_required and strengths
+      const memberSkillSet = new Set(member.skill_ids || []);
+      if ((task.skill_ids || []).some(skillId => !memberSkillSet.has(skillId))) {
           unassignedReasons.add('no_skill');
           return false;
       }

@@ -73,7 +73,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
 
 
   const sortedSchedule = useMemo(() => {
-    // FIX: Explicitly type the Map to ensure correct type inference for `groupedByDate.values()`.
     const groupedByDate = weeklySchedule.reduce((acc, day) => {
         if (!acc.has(day.date)) {
             acc.set(day.date, JSON.parse(JSON.stringify(day)));
@@ -84,6 +83,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
             existingDay.shifts.push(...newShifts);
         }
         return acc;
+    // FIX: Explicitly type the Map to ensure correct type inference for `WeeklyScheduleDay` objects.
     }, new Map<string, WeeklyScheduleDay>());
 
     const finalSchedule = Array.from(groupedByDate.values());
@@ -113,7 +113,8 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
       name: name,
       title: 'Placeholder',
       role_tags: [],
-      strengths: [],
+      // FIX: Use 'skill_ids' instead of deprecated 'strengths' property.
+      skill_ids: [],
       fixed_commitments_minutes: 0,
       default_tasks: [],
     };
@@ -130,7 +131,8 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
       if (dayIndex === -1) continue;
       
       const memberId = await ensureMemberExists(shift.memberName);
-      shift.memberId = memberId;
+      // FIX: Assign to 'member_id' which is the correct property on ParsedScheduleShift.
+      shift.member_id = memberId;
 
       const shiftFullDate = dayjs(weekStartDate).startOf('week').day(dayIndex).format(DATE_FORMAT);
       if (!shiftsByFullDate.has(shiftFullDate)) {
@@ -143,7 +145,8 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
     for (const [date, shifts] of shiftsByFullDate.entries()) {
       const newScheduleShifts: ScheduleShift[] = shifts.map(s => ({
         id: s.id || uuid(),
-        memberId: s.memberId!,
+        // FIX: Read from 'member_id' on ParsedScheduleShift to map to 'memberId' on ScheduleShift.
+        memberId: s.member_id!,
         start: s.start,
         end: s.end,
         shift_class: s.shift_class,

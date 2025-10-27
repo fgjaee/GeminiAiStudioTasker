@@ -62,13 +62,14 @@ const ShiftPatternManager: React.FC<ShiftPatternManagerProps> = ({
   }, [selectedMemberId, members, plannedShifts, targetDates, onSavePattern, memberPattern]);
 
   const handleApplyPattern = useCallback(() => {
-    if (!memberPattern) {
-        alert('No pattern saved for this member.');
-        return;
-    }
     // FIX: Add a guard clause to ensure a member is selected. This also helps TypeScript narrow the type of selectedMemberId.
     if (!selectedMemberId) {
         alert('Please select a member to apply the pattern to.');
+        return;
+    }
+    const memberId: ID = selectedMemberId;
+    if (!memberPattern) {
+        alert('No pattern saved for this member.');
         return;
     }
     const dateMap = new Map(targetDates.map(d => [dayjs(d).format('ddd'), d]));
@@ -78,7 +79,7 @@ const ShiftPatternManager: React.FC<ShiftPatternManagerProps> = ({
         const targetDate = dateMap.get(patternShift.day);
         if (targetDate) {
             shiftsToCreate.push({
-                member_id: selectedMemberId,
+                member_id: memberId,
                 date: targetDate,
                 day: patternShift.day,
                 start: patternShift.start,

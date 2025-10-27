@@ -10,6 +10,9 @@ import {
   DailyWorkload,
   ShiftPattern,
   ParsedScheduleShift,
+  Skill,
+  MemberSkill,
+  MemberAlias,
 } from './types';
 import { supabaseMock } from './services/supabaseMock';
 import { DEFAULT_MANAGER_SETTINGS } from './constants';
@@ -58,7 +61,10 @@ const AppContent: React.FC = () => {
   const [plannedShifts, setPlannedShifts] = useState<PlannedShift[]>([]);
   const [plannerConflicts, setPlannerConflicts] = useState<PlannerConflict[]>([]);
   const [shiftPatterns, setShiftPatterns] = useState<ShiftPattern[]>([]);
-  const [shiftsForManualImport, setShiftsForManualImport] = useState<ParsedScheduleShift[] | null>(null);
+  const [shiftsForManualImport, setShiftsForManualImport] = useState<ParsedScheduleShift[] | null>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [memberSkills, setMemberSkills] = useState<MemberSkill[]>([]);
+  const [memberAliases, setMemberAliases] = useState<MemberAlias[]>([]);
 
 
   const fetchData = useCallback(async () => {
@@ -81,6 +87,9 @@ const AppContent: React.FC = () => {
         supabaseMock.from<ShiftTemplate>('shift_templates').select(),
         supabaseMock.from<PlannedShift>('planned_shifts').select(),
         supabaseMock.from<ShiftPattern>('shift_patterns').select(),
+        supabaseMock.from<Skill>('skills').select(),
+        supabaseMock.from<MemberSkill>('member_skills').select(),
+        supabaseMock.from<MemberAlias>('member_aliases').select(),
       ]);
 
       setMembers(results[0].data || []);
@@ -98,6 +107,10 @@ const AppContent: React.FC = () => {
       setShiftTemplates(results[12].data || []);
       setPlannedShifts(results[13].data || []);
       setShiftPatterns(results[14].data || []);
+      setSkills(results[15].data || []);
+      setMemberSkills(results[16].data || []);
+      setMemberAliases(results[17].data || []);
+
 
       addToast({ message: 'Data loaded successfully!', type: 'success' });
     } catch (err) {
@@ -113,7 +126,7 @@ const AppContent: React.FC = () => {
   }, [fetchData]);
 
   // --- Generic Save/Delete Handlers ---
-  const createSaveHandler = <T extends {id: ID}>(tableName: any, entityName: string) => useCallback(async (data: T | T[]) => {
+  const createSaveHandler = <T extends {id?: ID}>(tableName: any, entityName: string) => useCallback(async (data: T | T[]) => {
       const { error } = await supabaseMock.from(tableName).upsert(data);
       if (error) addToast({ message: `Failed to save ${entityName}: ${error.message}`, type: 'error' });
       else { await fetchData(); addToast({ message: `${entityName} saved successfully!`, type: 'success' }); }
@@ -131,7 +144,7 @@ const AppContent: React.FC = () => {
   const handleSaveTask = createSaveHandler<Task>('tasks', 'Task');
   const handleDeleteTask = createDeleteHandler('tasks', 'Task');
   const handleSaveRule = createSaveHandler<ExplicitRule>('explicit_rules', 'Rule');
-  const handleDeleteRule = createDeleteHandler('explicit_rules', 'Rule');
+  const handleDeleteRule = createDeleteHandler('rules', 'Rule');
   const handleSaveWeeklySchedule = createSaveHandler<WeeklyScheduleDay>('weekly_schedule', 'Schedule');
   const handleDeleteWeeklySchedule = createDeleteHandler('weekly_schedule', 'Schedule Day');
   const handleSaveAssignmentChanges = createSaveHandler<Assignment>('assignments', 'Assignment');
@@ -154,6 +167,21 @@ const AppContent: React.FC = () => {
   const handleDeletePlannedShift = createDeleteHandler('planned_shifts', 'Planned Shift');
   const handleSaveShiftPattern = createSaveHandler<ShiftPattern>('shift_patterns', 'Shift Pattern');
   const handleDeleteShiftPattern = createDeleteHandler('shift_patterns', 'Shift Pattern');
+  const handleSaveSkill = createSaveHandler<Skill>('skills', 'Skill');
+  const handleDeleteSkill = createDeleteHandler('skills', 'Skill');
+  // FIX: Create a custom save handler for MemberSkill as it does not have an 'id' property and is incompatible with the generic createSaveHandler.
+  const handleSaveMemberSkill = useCallback(async (data: MemberSkill | MemberSkill[]) => {
+      const { error } = await supabaseMock.from('member_skills').upsert(data);
+      if (error) addToast({ message: `Failed to save Member Skill link: ${error.message}`, type: 'error' });
+      else { await fetchData(); addToast({ message: `Member Skill link saved successfully!`, type: 'success' }); }
+  }, [fetchData, addToast]);
+  const handleDeleteMemberSkill = useCallback(async (memberId: ID, skillId: ID) => {
+    const { error } = await supabaseMock.from('member_skills').deleteMatch({ member_id: memberId, skill_id: skillId });
+    if (error) addToast({ message: `Failed to delete member skill: ${error.message}`, type: 'error' });
+    else { await fetchData(); addToast({ message: 'Member skill link deleted.', type: 'info' }); }
+  }, [fetchData, addToast]);
+  const handleSaveAlias = createSaveHandler<MemberAlias>('member_aliases', 'Alias');
+  const handleDeleteAlias = createDeleteHandler('member_aliases', 'Alias');
 
   const handleDeletePlannedShiftsByDate = useCallback(async (date: string) => {
     if (!window.confirm(`Delete all planned shifts for ${dayjs(date).format('MMMM D')}?`)) return;
@@ -189,24 +217,24 @@ const AppContent: React.FC = () => {
   const handleAutoFillWeek = useCallback(async (startDate: string, numberOfDays: number) => {
     setLoading(true); addToast({ message: 'Auto-filling schedule...', type: 'info' });
     try {
-      const { generatedPlannedShifts, conflicts } = await autoFillSchedule({ members, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, targetDates: getNextNDays(startDate, numberOfDays), currentWeeklySchedule: weeklySchedule });
+      const { generatedPlannedShifts, conflicts } = await autoFillSchedule({ members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, targetDates: getNextNDays(startDate, numberOfDays), currentWeeklySchedule: weeklySchedule });
       await handleSavePlannedShift(generatedPlannedShifts);
       setPlannerConflicts(conflicts);
       addToast({ message: 'Auto-fill complete!', type: 'success' });
     } catch (err) { addToast({ message: `Auto-fill failed: ${(err as Error).message}`, type: 'error' });
     } finally { setLoading(false); }
-  }, [members, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, weeklySchedule, handleSavePlannedShift, addToast]);
+  }, [members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, weeklySchedule, handleSavePlannedShift, addToast]);
 
   const handleRepairCoverage = useCallback(async (date: string, areaId?: ID, timeslot?: string) => {
     setLoading(true); addToast({ message: 'Repairing coverage...', type: 'info' });
     try {
-      const { generatedPlannedShifts, conflicts } = await autoFillSchedule({ members, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, targetDates: [date], currentWeeklySchedule: weeklySchedule });
+      const { generatedPlannedShifts, conflicts } = await autoFillSchedule({ members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, targetDates: [date], currentWeeklySchedule: weeklySchedule });
       await handleSavePlannedShift(generatedPlannedShifts);
       setPlannerConflicts(conflicts);
       addToast({ message: 'Repair complete!', type: 'success' });
     } catch (err) { addToast({ message: `Repair failed: ${(err as Error).message}`, type: 'error' });
     } finally { setLoading(false); }
-  }, [members, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, weeklySchedule, handleSavePlannedShift, addToast]);
+  }, [members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, weeklySchedule, handleSavePlannedShift, addToast]);
 
   const handlePublishPlannedShifts = useCallback(async (startDate: string, numberOfDays: number) => {
     setLoading(true); addToast({ message: 'Publishing shifts...', type: 'info' });
@@ -232,7 +260,20 @@ const AppContent: React.FC = () => {
       case 'assignments': return <AssignmentsTab assignments={assignments} dailyWorkloads={dailyWorkloads} unassignedTasks={unassignedTasks} overCapacityMembers={overCapacityMembers} members={members} tasks={tasks} settings={settings} weeklySchedule={weeklySchedule} onGenerateAssignments={handleGenerateAssignments} onLockAssignment={handleLockAssignment} onSaveAssignmentChanges={handleSaveAssignmentChanges} />;
       case 'planner': return <PlannerTab members={members} areas={areas} staffingTargets={staffingTargets} availability={availability} shiftTemplates={shiftTemplates} plannedShifts={plannedShifts} conflicts={plannerConflicts} settings={settings} onSaveStaffingTarget={handleSaveStaffingTarget} onDeleteStaffingTarget={handleDeleteStaffingTarget} onSaveAvailability={handleSaveAvailability} onDeleteAvailability={handleDeleteAvailability} onSaveShiftTemplate={handleSaveShiftTemplate} onDeleteShiftTemplate={handleDeleteShiftTemplate} onSavePlannedShift={handleSavePlannedShift} onDeletePlannedShift={handleDeletePlannedShift} onDeletePlannedShiftsByDate={handleDeletePlannedShiftsByDate} onAutoFillWeek={handleAutoFillWeek} onRepairCoverage={handleRepairCoverage} onPublish={handlePublishPlannedShifts} shiftPatterns={shiftPatterns} onSaveShiftPattern={handleSaveShiftPattern} onDeleteShiftPattern={handleDeleteShiftPattern} />;
       case 'schedule': return <ScheduleTab members={members} weeklySchedule={weeklySchedule} shiftPatterns={shiftPatterns} onSaveWeeklySchedule={handleSaveWeeklySchedule} onDeleteWeeklySchedule={handleDeleteWeeklySchedule} fetchData={fetchData} onSaveMember={handleSaveMember} onSaveShiftPattern={handleSaveShiftPattern} onDeleteShiftPattern={handleDeleteShiftPattern} initialShiftsForEditor={shiftsForManualImport} onEditorClosed={() => setShiftsForManualImport(null)} />;
-      case 'members': return <MembersTab members={members} onSaveMember={handleSaveMember} onDeleteMember={handleDeleteMember} />;
+      case 'members': return <MembersTab 
+        members={members} 
+        skills={skills}
+        memberSkills={memberSkills}
+        memberAliases={memberAliases}
+        onSaveMember={handleSaveMember} 
+        onDeleteMember={handleDeleteMember}
+        onSaveSkill={handleSaveSkill}
+        onDeleteSkill={handleDeleteSkill}
+        onSaveMemberSkill={handleSaveMemberSkill}
+        onDeleteMemberSkill={handleDeleteMemberSkill}
+        onSaveAlias={handleSaveAlias}
+        onDeleteAlias={handleDeleteAlias}
+      />;
       case 'tasks': return <TasksTab tasks={tasks} areas={areas} orderSets={orderSets} orderSetItems={orderSetItems} onSaveTask={handleSaveTask} onDeleteTask={handleDeleteTask} onSaveArea={handleSaveArea} onDeleteArea={handleDeleteArea} onSaveOrderSet={handleSaveOrderSet} onDeleteOrderSet={handleDeleteOrderSet} onSaveOrderSetItem={handleSaveOrderSetItem} onDeleteOrderSetItem={handleDeleteOrderSetItem} />;
       case 'rules': return <RulesTab explicitRules={explicitRules} members={members} tasks={tasks} onSaveRule={handleSaveRule} onDeleteRule={handleDeleteRule} />;
       case 'review': return <ReviewTab assignments={assignments} dailyWorkloads={dailyWorkloads} unassignedTasks={unassignedTasks} overCapacityMembers={overCapacityMembers} members={members} tasks={tasks} templates={templates} settings={settings} />;

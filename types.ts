@@ -1,201 +1,7 @@
 // types.ts
 export type ID = string;
 
-// --- Phase 1: Core Data Models ---
-export type Member = {
-  id: ID;
-  name: string;
-  title?: string;
-  role_tags: string[];
-  strengths: string[];
-  fixed_commitments_minutes: number; // e.g., for administrative tasks, meetings
-  default_tasks: ID[]; // IDs of tasks always assigned to this member
-  // Phase B Additions: Planner
-  max_daily_minutes?: number; // Max minutes per day this member can be scheduled
-  max_weekly_minutes?: number; // Max minutes per week this member can be scheduled
-  shift_class_preference?: ShiftClass[]; // Preferred shift classes
-  availability?: { id: ID; day: string; start: string; end: string }[]; // Specific availability windows
-};
-
-export type TaskType = 'standard' | 'upkeep' | 'project';
-export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'one-time';
-
-export type Task = {
-  id: ID;
-  code: string; // Phase 2: Short code, unique, case-insensitive
-  name: string;
-  description?: string;
-  areaId?: ID; // Phase 2: Optional grouping by area
-  skill_required: string[]; // e.g., ['Ordering', 'Lifting']
-  estimated_duration: number; // in minutes
-  task_type: TaskType;
-  priority_weight: number; // 1-100, lower is higher priority
-  allow_multi_assign: boolean; // Can multiple members be assigned to this task?
-  earliest_start: string; // HH:mm
-  due_by: string; // HH:mm or 'EOD'
-  recurrence_type: RecurrenceType;
-  recurrence_detail?: string; // e.g., 'Monday', 'Last Sunday' - for weekly/monthly tasks
-  is_must_run?: boolean; // Phase 3: If true, assignment engine must assign this
-  min_coverage?: number; // Phase 3: Minimum number of members required
-};
-
-export type PrimarySelector = {
-  id: ID;
-  mode: 'member' | 'tag'; // 'member' for specific member ID, 'tag' for role_tag/skill
-  value: string; // Member ID or tag string
-};
-
-export type ExplicitRule = {
-  id: ID;
-  taskId: ID;
-  primary_selector: PrimarySelector;
-  fallback_selectors?: PrimarySelector[]; // Ordered list of fallbacks
-  exclude_day?: string[]; // e.g., ['Saturday', 'Sunday']
-  max_per_member_per_day?: number | null; // Max times a specific member can be assigned this task per day
-  prefer_shift_class?: ShiftClass; // e.g., 'Opening', 'Closing' - to prefer members on certain shifts
-  earliest_start?: string; // Overrides task default
-  due_by?: string; // Overrides task default
-  reason_template?: string; // Handlebars template for explanation
-};
-
-export type ScheduleShift = {
-  id: ID;
-  memberId: ID;
-  start: string; // HH:mm
-  end: string; // HH:mm
-  shift_class?: ShiftClass; // e.g., 'Opening', 'Mid-Shift', 'Closing'
-};
-
-export type WeeklyScheduleDay = {
-  id: ID;
-  date: string; // YYYY-MM-DD
-  shifts: ScheduleShift[];
-  flags?: {
-    source?: string; // 'pdf_upload', 'manual_entry', 'planner'
-    timestamp?: string;
-    checksum?: string; // For PDF uploads
-    createdManually?: boolean;
-  };
-};
-
-export type AssignmentStatus = 'assigned' | 'unassigned' | 'over-capacity' | 'conflict';
-
-export type Assignment = {
-  id: ID;
-  taskId: ID;
-  memberId: ID;
-  date: string; // YYYY-MM-DD
-  startTime: string; // HH:mm (assigned start)
-  endTime: string; // HH:mm (assigned end)
-  duration: number; // in minutes
-  reason: string; // Explanation of why assigned
-  locked: boolean; // If true, generator won't change it
-  status: AssignmentStatus; // Current status (e.g., assigned, over-capacity)
-};
-
-export type DailyWorkload = {
-  date: string;
-  memberId: ID;
-  capacity: number; // Total available work minutes for the member (shift - fixed_commitments)
-  totalDuration: number; // Sum of assigned task durations (excluding upkeep)
-  upkeepDuration: number; // Sum of upkeep task durations
-  assignedTasks: Assignment[];
-  unassignedTaskIds: ID[]; // List of tasks assigned to this member that couldn't fit
-};
-
-export type Template = {
-  id: ID;
-  name: string;
-  content: string; // Handlebars template for reports
-};
-
-export type ManagerSettings = {
-  id: ID;
-  floorSlaTime: number; // Total minutes available for all tasks (e.g., 480 mins for 8 hours)
-  tieBreakSeed: number; // For deterministic assignment results
-  overCapacityThreshold: number; // Minutes over capacity before warning
-  assignmentStartTime: string; // HH:mm, default start time for assignments if not specified by task/rule
-  // Phase 2: Planner specific settings
-  plannerSeed?: number; // Seed for deterministic planner auto-fill
-  defaultPlanningPeriod?: number; // Default number of days for planner view
-  defaultSlotDuration?: number; // Default slot duration in minutes for timeline
-};
-
-export type Area = {
-  id: ID;
-  name: string;
-  group_name?: string; // e.g., 'Dry Tables', 'Walls'
-  position: number; // For UI ordering
-};
-
-export type OrderSetScope = 'global' | 'weekday' | 'scenario';
-export type OrderSet = {
-  id: ID;
-  name: string;
-  scope: OrderSetScope;
-  weekday?: string; // e.g., 'Monday' if scope is 'weekday'
-  overstock?: boolean; // True if scope is 'scenario' and applies when overstock
-  truck_late?: boolean; // True if scope is 'scenario' and applies when truck is late
-  created_at: string;
-};
-
-export type OrderSetItem = {
-  id: ID; // Must have an ID for mock db operations and React keys
-  order_set_id: ID;
-  task_id: ID;
-  position: number;
-};
-
-// --- PDF Parser Mock Specific Types ---
-export type ParsedScheduleShift = {
-  id: ID;
-  memberName: string;
-  memberId?: ID; // Resolved member ID
-  day: 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
-  start: string; // 'HH:MM' 24h
-  end: string; // 'HH:MM' 24h
-  role?: string; // Role text from PDF
-  shift_class?: ShiftClass; // Inferred from shift times or PDF content
-  confidence?: number; // How confident the parser is
-  rawText?: string; // Raw text line from PDF
-};
-
-export type ParsedScheduleData = {
-  date: string; // YYYY-MM-DD, the start date of the week parsed
-  shifts: ParsedScheduleShift[];
-  flags?: {
-    source: string;
-    timestamp: string;
-    checksum: string;
-  };
-  diagnostics?: {
-    rowsParsed: number;
-    shiftsCreated: number;
-    membersResolved: number;
-    membersCreated: number;
-    rowsDiscarded: number;
-    reason?: string;
-  };
-};
-
-// --- Supabase Mock Specific Types ---
-export type SupabaseTableName =
-  | 'members'
-  | 'tasks'
-  | 'explicit_rules'
-  | 'weekly_schedule'
-  | 'assignments'
-  | 'templates'
-  | 'manager_settings'
-  | 'areas' // Phase 2: Planner
-  | 'order_sets' // Phase 2: Order Sets
-  | 'order_set_items' // Phase 2: Order Sets
-  | 'staffing_targets' // Phase B: Planner
-  | 'availability' // Phase B: Planner
-  | 'shift_templates' // Phase B: Planner
-  | 'planned_shifts' // Phase B: Planner
-  | 'shift_patterns'; // Drag-and-drop scheduler enhancement
-
+// --- Supabase Meta Types ---
 export type SupabaseTableData = {
   members: Member[];
   tasks: Task[];
@@ -212,83 +18,263 @@ export type SupabaseTableData = {
   shift_templates: ShiftTemplate[];
   planned_shifts: PlannedShift[];
   shift_patterns: ShiftPattern[];
+  skills: Skill[];
+  member_skills: MemberSkill[];
+  member_aliases: MemberAlias[];
 };
 
-// --- Old Backup Data Structure (for importer) ---
-export type OldMember = {
+export type SupabaseTableName = keyof SupabaseTableData;
+
+
+// --- New Supabase-aligned Models ---
+export type Skill = {
   id: ID;
   name: string;
+};
+
+export type MemberSkill = {
+  member_id: ID;
+  skill_id: ID;
+};
+
+export type MemberAlias = {
+  id: ID;
+  member_id: ID;
+  alias: string;
+};
+
+// --- Core Data Models ---
+export type Member = {
+  id: ID;
+  name: string;
+  title?: string;
+  role_tags: string[];
+  skill_ids?: ID[]; // Replaces 'strengths' with relation to Skills table
+  fixed_commitments_minutes: number;
+  default_tasks: ID[];
+  max_daily_minutes?: number;
+  max_weekly_minutes?: number;
+  shift_class_preference?: ShiftClass[];
+  availability?: { id: ID; day: string; start: string; end:string }[];
+};
+
+export type TaskType = 'standard' | 'upkeep' | 'project';
+export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'one-time';
+
+export type Task = {
+  id: ID;
+  code: string;
+  name: string;
+  description?: string;
+  areaId?: ID;
+  skill_ids?: ID[]; // Replaces 'skill_required' with relation to Skills table
+  estimated_duration: number;
+  task_type: TaskType;
+  priority_weight: number;
+  allow_multi_assign: boolean;
+  earliest_start: string;
+  due_by: string; // HH:mm or 'EOD' or 'Continuous'
+  recurrence_type: RecurrenceType;
+  recurrence_detail?: string;
+  is_must_run?: boolean;
+  min_coverage?: number;
+};
+
+export type PrimarySelector = {
+  id: string;
+  mode: 'member' | 'skill' | 'role_tag';
+  value: string; // Member ID, Skill ID, or role_tag string
+};
+
+export type ExplicitRule = {
+  id: string;
+  task_id: string;
+  primary_selector: PrimarySelector;
+  fallback_selectors: PrimarySelector[]; // stable ids
+  exclude_day?: ('Sun'|'Mon'|'Tue'|'Wed'|'Thu'|'Fri'|'Sat')[];
+  prefer_shift_class?: 'Open'|'Mid'|'Close'|'Overnight';
+  earliest_start?: string; // HH:MM
+  due_by?: string; // HH:MM or 'EOD' or 'Continuous'
+  max_per_member_per_day?: number;
+  reason_template?: string;
+};
+
+export type ScheduleShift = {
+  id: ID;
+  memberId: ID;
+  start: string; // HH:mm
+  end: string; // HH:mm
+  shift_class?: ShiftClass;
+  source?: 'import' | 'manual';
+};
+
+export type WeeklyScheduleDay = {
+  id: ID;
+  date: string; // YYYY-MM-DD
+  shifts: ScheduleShift[];
+  flags?: Record<string, any>; // For metadata like source
+};
+
+export type AssignmentStatus = 'assigned' | 'unassigned' | 'over-capacity' | 'conflict';
+
+export type Assignment = {
+  id: ID;
+  taskId: ID;
+  memberId: ID;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  duration: number; // in minutes
+  reason: string;
+  locked: boolean;
+  status: AssignmentStatus;
+};
+
+export type DailyWorkload = {
+  date: string;
+  memberId: ID;
+  capacity: number;
+  totalDuration: number;
+  upkeepDuration: number;
+  assignedTasks: Assignment[];
+  unassignedTaskIds: ID[];
+};
+
+export type Template = {
+  id: ID;
+  name: string;
+  content: string;
+};
+
+export type ManagerSettings = {
+  id: ID;
+  floorSlaTime: number;
+  tieBreakSeed: number;
+  overCapacityThreshold: number;
+  assignmentStartTime: string;
+  plannerSeed?: number;
+  defaultPlanningPeriod?: number;
+  defaultSlotDuration?: number;
+};
+
+export type Area = {
+  id: ID;
+  name: string;
+  group_name?: string;
+  position: number;
+};
+
+export type OrderSetScope = 'global' | 'weekday' | 'scenario';
+export type OrderSet = {
+  id: ID;
+  name: string;
+  scope: OrderSetScope;
+  weekday?: string;
+  overstock?: boolean;
+  truck_late?: boolean;
+  created_at: string;
+};
+
+export type OrderSetItem = {
+  id: ID;
+  order_set_id: ID;
+  task_id: ID;
+  position: number;
+};
+
+// --- Importer Types ---
+export type ParsedScheduleData = {
+  date: string; // YYYY-MM-DD of week start
+  shifts: ParsedScheduleShift[];
+  flags?: Record<string, any>;
+  diagnostics?: {
+    rowsParsed?: number;
+    shiftsCreated?: number;
+    membersResolved?: number;
+    membersCreated?: number;
+    rowsDiscarded?: number;
+    reason?: string;
+  };
+};
+
+export type ParsedScheduleShift = {
+  id: string;
+  memberName: string;
+  member_id?: ID; // Resolved member ID
+  day: 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
+  start: string; // 'HH:MM' 24h
+  end: string; // 'HH:MM' 24h
   role?: string;
-  skills?: string[];
+  confidence?: number;
+  rawText?: string;
+  // FIX: Add optional shift_class property
+  shift_class?: ShiftClass;
 };
 
+// --- Legacy Types for Importer ---
 export type OldTask = {
-  id: ID;
+  id: string;
   name: string;
-  skillRequired: string | string[]; // Can be string or string[]
+  skillRequired: string | string[];
+  order: number;
   deadline: string;
   estimatedDuration: number;
-  isExclusive: boolean; // Invert to allow_multi_assign
-  taskType: string;
-  recurrenceType: string;
-  recurrenceDetail?: string;
-  order: number;
+  recurrenceType?: string;
+  taskType?: string;
+  isExclusive?: boolean;
 };
 
 export type OldExplicitRule = {
-  taskId?: ID; // Sometimes missing, need to link by name
   taskName: string;
-  primaryMemberId?: ID;
-  skillRequired?: string; // For tag-based primary
-  typeLabel?: string; // Can be used for reason_template
-  excludeDay?: string; // Single string, needs to be array
-  fallbacks?: ID[]; // Array of member IDs
+  taskId?: string; // It's optional in the code
+  primaryMemberId?: string;
+  skillRequired?: string;
+  fallbacks?: string[];
+  excludeDay?: string;
+  typeLabel?: string;
 };
+
+export type OldMember = {
+  id: string;
+  name: string;
+  role?: string;
+  skills?: string[];
+}
 
 export type OldBackupData = {
-  members: OldMember[];
   dailyTasks: OldTask[];
-  schedule: Record<string, any>; // Not used directly, but part of structure
-  allSkills: string[]; // Not used directly
-  preferredAssignments: Record<string, any>; // Not used directly
   explicitRules: OldExplicitRule[];
-  timestamp: string;
+  members: OldMember[];
 };
 
-// --- Toast and Modal types ---
-export type ToastData = {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-};
 
-// --- Phase B: Planner Types ---
+// --- Planner Types ---
 export type ShiftClass = 'Opening' | 'Mid-Shift' | 'Closing' | 'Overnight' | 'Weekend' | 'General';
 
 export type StaffingTarget = {
   id: ID;
   day: string; // 'Mon', 'Tue', etc.
   area_id: ID;
-  start: string; // HH:mm, 30-min slot start
-  end: string; // HH:mm, 30-min slot end
-  required_count: number; // Number of members required
+  start: string;
+  end: string;
+  required_count: number;
 };
 
 export type Availability = {
   id: ID;
   member_id: ID;
-  day: string; // 'Mon', 'Tue', etc.
-  start: string; // HH:mm
-  end: string; // HH:mm
+  day: string;
+  start: string;
+  end: string;
 };
 
 export type ShiftTemplate = {
   id: ID;
   name: string;
-  start: string; // HH:mm
-  end: string; // HH:mm
-  role_tags?: string[]; // Preferred role tags for this template
-  shift_class?: ShiftClass; // Associated shift class
+  start: string;
+  end: string;
+  role_tags?: string[];
+  shift_class?: ShiftClass;
 };
 
 export type PlannedShiftStatus = 'draft' | 'published' | 'conflict';
@@ -298,42 +284,33 @@ export type PlannedShift = {
   id: ID;
   member_id: ID;
   day: 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
-  date: string; // YYYY-MM-DD for specific instance
-  start: string; // HH:mm
-  end: string; // HH:mm
-  area_id?: ID; // Planned area of work
+  date: string;
+  start: string;
+  end: string;
+  area_id?: ID;
   source: PlannedShiftSource;
   status: PlannedShiftStatus;
-  reason?: string; // Explanation for auto-generated shifts
-  confidence?: number; // For AI-generated parts
+  reason?: string;
+  confidence?: number;
 };
 
 export type PlannerConflict = {
   id: ID;
   type: 'under-coverage' | 'over-coverage' | 'availability-violation' | 'overtime-risk' | 'break-violation';
-  day: string; // Mon, Tue, etc.
-  date?: string; // YYYY-MM-DD
+  day: string;
+  date?: string;
   area_id?: ID;
-  timeslot?: string; // HH:mm
+  timeslot?: string;
   member_id?: ID;
   details: string;
   severity: 'low' | 'medium' | 'high';
-  suggestedFix?: string[]; // e.g., ['Add shift for m1 at 08:00', 'Reduce shift for m2']
+  suggestedFix?: string[];
 };
 
-export type PlanningAssistantResponse = {
-  suggestions: string; // Natural language suggestions
-  // More structured suggestions could go here
-};
-
-// --- Drag-and-drop scheduler enhancement ---
 export type ShiftPattern = {
   id: ID;
   member_id: ID;
-  name: string; // e.g., "Alice's Standard Week"
-  // Store shifts relative to the day of the week, not a specific date
-  // FIX: Redefined the 'shifts' type to accurately reflect the data being stored and used (day, start, end, area_id),
-  // which resolves type mismatches when creating and applying patterns.
+  name: string;
   shifts: {
     day: ParsedScheduleShift['day'];
     start: string;

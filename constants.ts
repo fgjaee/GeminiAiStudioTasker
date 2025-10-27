@@ -1,5 +1,6 @@
 // constants.ts
 import {
+  // FIX: Import SupabaseTableData
   SupabaseTableData,
   ManagerSettings,
   Template,
@@ -16,6 +17,11 @@ import {
   ShiftTemplate,
   PlannedShift,
   ShiftClass,
+  // FIX: Import Skill and MemberSkill
+  Skill,
+  MemberSkill,
+  RecurrenceType,
+  TaskType,
 } from './types';
 import { uuid } from './utils/helpers';
 import dayjs from 'dayjs';
@@ -93,197 +99,186 @@ Check-out: ______________________
 Supervisor Sign: ________________
 `;
 
+// --- Skill Data Generation ---
+// Create a unified list of all skills from member strengths and task requirements
+const allSkillNames = [
+  "Produce Lead", "Ordering", "Dry Table/Display", "Quality Checks", "Backroom Organization", "Freshpak Wall",
+  "Salads-Juice Wall", "Mirror Wall", "Wet Rack/Herbs Wall", "Receiving & Breakdown", "Cutter/Prep", "IMS",
+  "Signs/Ad Change", "Produce Clerk"
+];
+const uniqueSkillNames = [...new Set(allSkillNames)];
+const initialSkills: Skill[] = uniqueSkillNames.map((name, index) => ({ id: `skill_${index}`, name }));
+const skillNameToIdMap = new Map(initialSkills.map(skill => [skill.name, skill.id]));
+const getSkillIds = (names: string[]) => names.map(name => skillNameToIdMap.get(name)).filter(Boolean) as string[];
 
-// --- Initial Mock Data (seeded with user's provided tasks and rules) ---
-// This initial data will be loaded into supabaseMock on app start.
-export const initialMockData: SupabaseTableData = {
-  members: [
-    // Placeholder members to resolve member IDs in rules and parsed schedules
-    {
-      id: "m_alice", name: "Alice Johnson", title: "Produce Lead",
-      role_tags: ["Produce Lead", "Ordering"], strengths: ["Produce Lead", "Ordering", "Dry Table/Display", "Quality Checks", "Backroom Organization", "Freshpak Wall", "Salads-Juice Wall", "Mirror Wall", "Wet Rack/Herbs Wall", "Receiving & Breakdown", "Cutter/Prep", "IMS", "Signs/Ad Change"],
-      // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
-      fixed_commitments_minutes: 60, max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Opening"] as ShiftClass[],
-      availability: [
-        { id: uuid(), day: 'Mon', start: '06:00', end: '16:00' },
-        { id: uuid(), day: 'Tue', start: '06:00', end: '16:00' },
-        { id: uuid(), day: 'Wed', start: '06:00', end: '16:00' },
-        { id: uuid(), day: 'Thu', start: '06:00', end: '16:00' },
-        { id: uuid(), day: 'Fri', start: '06:00', end: '16:00' },
-        { id: uuid(), day: 'Sat', start: '07:00', end: '15:00' },
-        { id: uuid(), day: 'Sun', start: '07:00', end: '15:00' },
-      ],
-      default_tasks: [],
-    },
-    {
-      id: "m_bob", name: "Bob Smith", title: "Produce Clerk",
-      role_tags: ["Produce Clerk"], strengths: ["Produce Clerk", "Dry Table/Display", "Quality Checks", "Backroom Organization"],
-      // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
-      fixed_commitments_minutes: 30, max_daily_minutes: 420, max_weekly_minutes: 2000, shift_class_preference: ["Mid-Shift", "Closing"] as ShiftClass[],
-      availability: [
-        { id: uuid(), day: 'Mon', start: '09:00', end: '18:00' },
-        { id: uuid(), day: 'Tue', start: '09:00', end: '18:00' },
-        { id: uuid(), day: 'Wed', start: '09:00', end: '18:00' },
-        { id: uuid(), day: 'Thu', start: '09:00', end: '18:00' },
-        { id: uuid(), day: 'Fri', start: '09:00', end: '18:00' },
-      ],
-      default_tasks: [],
-    },
-    {
-      id: "m_charlie", name: "Charlie Brown", title: "Produce Clerk",
-      role_tags: ["Produce Clerk"], strengths: ["Produce Clerk", "Wet Rack/Herbs Wall", "Salads-Juice Wall", "Quality Checks"],
-      // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
-      fixed_commitments_minutes: 45, max_daily_minutes: 450, max_weekly_minutes: 2200, shift_class_preference: ["Opening", "Mid-Shift"] as ShiftClass[],
-      availability: [
-        { id: uuid(), day: 'Mon', start: '07:00', end: '16:00' },
-        { id: uuid(), day: 'Tue', start: '07:00', end: '16:00' },
-        { id: uuid(), day: 'Wed', start: '07:00', end: '16:00' },
-        { id: uuid(), day: 'Thu', start: '07:00', end: '16:00' },
-        { id: uuid(), day: 'Fri', start: '07:00', end: '16:00' },
-      ],
-      default_tasks: [],
-    },
-    // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
+const memberData = [
+    { id: "m_alice", name: "Alice Johnson", title: "Produce Lead", role_tags: ["Produce Lead", "Ordering"], strengths: ["Produce Lead", "Ordering", "Dry Table/Display", "Quality Checks", "Backroom Organization", "Freshpak Wall", "Salads-Juice Wall", "Mirror Wall", "Wet Rack/Herbs Wall", "Receiving & Breakdown", "Cutter/Prep", "IMS", "Signs/Ad Change"], fixed_commitments_minutes: 60, max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Opening"] as ShiftClass[], availability: [ { id: uuid(), day: 'Mon', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Tue', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Wed', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Thu', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Fri', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Sat', start: '07:00', end: '15:00' }, { id: uuid(), day: 'Sun', start: '07:00', end: '15:00' } ], default_tasks: [] },
+    { id: "m_bob", name: "Bob Smith", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Produce Clerk", "Dry Table/Display", "Quality Checks", "Backroom Organization"], fixed_commitments_minutes: 30, max_daily_minutes: 420, max_weekly_minutes: 2000, shift_class_preference: ["Mid-Shift", "Closing"] as ShiftClass[], availability: [ { id: uuid(), day: 'Mon', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Tue', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Wed', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Thu', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Fri', start: '09:00', end: '18:00' } ], default_tasks: [] },
+    { id: "m_charlie", name: "Charlie Brown", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Produce Clerk", "Wet Rack/Herbs Wall", "Salads-Juice Wall", "Quality Checks"], fixed_commitments_minutes: 45, max_daily_minutes: 450, max_weekly_minutes: 2200, shift_class_preference: ["Opening", "Mid-Shift"] as ShiftClass[], availability: [ { id: uuid(), day: 'Mon', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Tue', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Wed', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Thu', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Fri', start: '07:00', end: '16:00' } ], default_tasks: [] },
     { id: "m_marlon", name: "Marlon", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Opening"] as ShiftClass[], availability: [] },
-    // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
     { id: "m_james", name: "James", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering", "Freshpak Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Mid-Shift"] as ShiftClass[], availability: [] },
-    // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
     { id: "m_deb", name: "Deb", title: "Produce Lead", role_tags: ["Produce Lead", "Ordering"], strengths: ["Ordering", "Salads-Juice Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Closing"] as ShiftClass[], availability: [] },
     { id: "m_kenneth", name: "Kenneth", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: [] as ShiftClass[], availability: [] },
     { id: "m_william", name: "William", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering", "Mirror Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: [] as ShiftClass[], availability: [] },
-    // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
     { id: "m_sandra", name: "Sandra", title: "Produce Lead", role_tags: ["Produce Lead", "Ordering"], strengths: ["Ordering", "Freshpak Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Opening"] as ShiftClass[], availability: [] },
-    // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
     { id: "m_beth", name: "Beth", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering", "Freshpak Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Mid-Shift"] as ShiftClass[], availability: [] },
-    // FIX: Cast shift_class_preference to ShiftClass[] to avoid type widening issues.
     { id: "m_heidi", name: "Heidi", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Wet Rack/Herbs Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Closing"] as ShiftClass[], availability: [] },
     { id: "m_john", name: "John", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Mirror Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: [] as ShiftClass[], availability: [] },
     { id: "m_nabil", name: "Nabil", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Quality Checks"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: [] as ShiftClass[], availability: [] },
     { id: "m_barry", name: "Barry", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Quality Checks"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: [] as ShiftClass[], availability: [] },
     { id: "m_victoria", name: "Victoria", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Quality Checks"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: [] as ShiftClass[], availability: [] },
-  ].map(m => ({ ...m, id: m.id || uuid() })), // Ensure all members have an ID
+];
+
+const initialMembers = memberData.map(({ strengths, ...m }) => ({
+    ...m,
+    id: m.id || uuid(),
+    skill_ids: getSkillIds(strengths),
+}));
+
+const initialMemberSkills: MemberSkill[] = initialMembers.flatMap(m =>
+    (m.skill_ids || []).map(skill_id => ({ member_id: m.id, skill_id }))
+);
+
+// --- Initial Mock Data (seeded with user's provided tasks and rules) ---
+// This initial data will be loaded into supabaseMock on app start.
+export const initialMockData: SupabaseTableData = {
+  members: initialMembers,
+  skills: initialSkills,
+  member_skills: initialMemberSkills,
+  member_aliases: [],
   tasks: [
     {
       "id": "task_inventory", "code": "INV", "name": "Monthly Full Produce Inventory", "description": "Conduct a full inventory count of all produce items in the department.",
-      // FIX: Use 'as const' to prevent type widening from literal to string for task_type and recurrence_type.
-      "skill_required": ["Backroom Organization", "IMS"], "earliest_start": "08:00", "due_by": "EOD", "estimated_duration": 180, "task_type": "standard" as const, "priority_weight": 1, "allow_multi_assign": false, "recurrence_type": "monthly" as const, "recurrence_detail": "Last Sunday", "areaId": "area_backroom"
+      "skill_required": ["Backroom Organization", "IMS"], "earliest_start": "08:00", "due_by": "EOD", "estimated_duration": 180, "task_type": "standard", "priority_weight": 1, "allow_multi_assign": false, "recurrence_type": "monthly", "recurrence_detail": "Last Sunday", "areaId": "area_backroom"
     },
     {
       "id": "task_ad_change", "code": "AD", "name": "Weekly Ad/First Impression Change", "description": "Update all ad signage and refresh first impression displays.",
-      "skill_required": ["Signs/Ad Change", "Dry Table/Display"], "earliest_start": "06:00", "due_by": "09:00", "estimated_duration": 60, "task_type": "standard" as const, "priority_weight": 2, "allow_multi_assign": false, "recurrence_type": "weekly" as const, "recurrence_detail": "Wednesday", "areaId": "area_front"
+      "skill_required": ["Signs/Ad Change", "Dry Table/Display"], "earliest_start": "06:00", "due_by": "09:00", "estimated_duration": 60, "task_type": "standard", "priority_weight": 2, "allow_multi_assign": false, "recurrence_type": "weekly", "recurrence_detail": "Wed", "areaId": "area_front"
     },
     {
       "id": "task_deep_clean", "code": "DCW2", "name": "Weekly Deep Clean - Salad Wall", "description": "Thoroughly clean and sanitize the salad wall display.",
-      "skill_required": ["Salads-Juice Wall", "Quality Checks"], "earliest_start": "09:00", "due_by": "EOD", "estimated_duration": 120, "task_type": "standard" as const, "priority_weight": 3, "allow_multi_assign": false, "recurrence_type": "weekly" as const, "recurrence_detail": "Tuesday", "areaId": "area_wall_salad"
+      "skill_required": ["Salads-Juice Wall", "Quality Checks"], "earliest_start": "09:00", "due_by": "EOD", "estimated_duration": 120, "task_type": "standard", "priority_weight": 3, "allow_multi_assign": false, "recurrence_type": "weekly", "recurrence_detail": "Tue", "areaId": "area_wall_salad"
     },
     {
       "id": "task_ims_audit", "code": "IMSF", "name": "IMS Audit Finalization", "description": "Finalize weekly IMS audit and reconcile discrepancies.",
-      "skill_required": ["IMS", "Quality Checks"], "earliest_start": "14:00", "due_by": "EOD", "estimated_duration": 30, "task_type": "standard" as const, "priority_weight": 4, "allow_multi_assign": false, "recurrence_type": "weekly" as const, "recurrence_detail": "Saturday", "areaId": "area_backroom"
+      "skill_required": ["IMS", "Quality Checks"], "earliest_start": "14:00", "due_by": "EOD", "estimated_duration": 30, "task_type": "standard", "priority_weight": 4, "allow_multi_assign": false, "recurrence_type": "weekly", "recurrence_detail": "Sat", "areaId": "area_backroom"
     },
     {
       "id": "task_dob_order", "code": "DOB", "name": "DOB Order", "description": "Place daily produce order with the distribution center.",
-      "skill_required": ["Ordering"], "earliest_start": "07:00", "due_by": "07:55", "estimated_duration": 90, "task_type": "standard" as const, "priority_weight": 5, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_office"
+      "skill_required": ["Ordering"], "earliest_start": "07:00", "due_by": "07:55", "estimated_duration": 90, "task_type": "standard", "priority_weight": 5, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_office"
     },
     {
       "id": "task_freshpak_order", "code": "FPO", "name": "Freshpak Order", "description": "Place daily order for pre-packaged produce items.",
-      "skill_required": ["Ordering"], "earliest_start": "07:00", "due_by": "07:55", "estimated_duration": 20, "task_type": "standard" as const, "priority_weight": 6, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_office"
+      "skill_required": ["Ordering"], "earliest_start": "07:00", "due_by": "07:55", "estimated_duration": 20, "task_type": "standard", "priority_weight": 6, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_office"
     },
     {
       "id": "t_first_impressions", "code": "T0", "name": "First Impressions", "description": "Ensure the entrance and front displays are perfectly stocked and appealing.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 30, "task_type": "standard" as const, "priority_weight": 10, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_front"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 30, "task_type": "standard", "priority_weight": 10, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_front"
     },
     {
       "id": "t_t1", "code": "T1", "name": "Tropical/Harvest Table", "description": "Stock and maintain the tropical and harvest produce table.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard" as const, "priority_weight": 20, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard", "priority_weight": 20, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "t_t2", "code": "T2", "name": "Apple Bulk/Bagged Table", "description": "Stock and maintain the apple bulk and bagged display table.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard" as const, "priority_weight": 30, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard", "priority_weight": 30, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "t_t3", "code": "T3", "name": "Berries/Grapes Table", "description": "Stock and maintain the berries and grapes display table.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard" as const, "priority_weight": 40, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard", "priority_weight": 40, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "t_t4", "code": "T4", "name": "Banana/Citrus Table", "description": "Stock and maintain the banana and citrus display table.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard" as const, "priority_weight": 50, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard", "priority_weight": 50, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "t_t5", "code": "T5", "name": "Tomato/Pepper Table", "description": "Stock and maintain the tomato and pepper display table.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 60, "task_type": "standard" as const, "priority_weight": 60, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 60, "task_type": "standard", "priority_weight": 60, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "t_t6", "code": "T6", "name": "Organic Produce Table", "description": "Stock and maintain the organic produce display table.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 30, "task_type": "standard" as const, "priority_weight": 70, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 30, "task_type": "standard", "priority_weight": 70, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "t_t7", "code": "T7", "name": "Potato/Onion Table", "description": "Stock and maintain the potato and onion display table.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 60, "task_type": "standard" as const, "priority_weight": 80, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 60, "task_type": "standard", "priority_weight": 80, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "task_w1", "code": "W1", "name": "Freshpak Wall Service", "description": "Service and replenish the fresh-packed produce wall.",
-      "skill_required": ["Freshpak Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard" as const, "priority_weight": 100, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_wall_freshpak"
+      "skill_required": ["Freshpak Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard", "priority_weight": 100, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_wall_freshpak"
     },
     {
       "id": "task_w2", "code": "W2", "name": "Salad/Juice Wall Service", "description": "Service and replenish the salad and juice wall.",
-      "skill_required": ["Salads-Juice Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 240, "task_type": "standard" as const, "priority_weight": 110, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_wall_salad"
+      "skill_required": ["Salads-Juice Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 240, "task_type": "standard", "priority_weight": 110, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_wall_salad"
     },
     {
       "id": "task_w3", "code": "W3", "name": "Mirror Wall Service", "description": "Service and replenish the mirror wall displays.",
-      "skill_required": ["Mirror Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard" as const, "priority_weight": 120, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_wall_mirror"
+      "skill_required": ["Mirror Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard", "priority_weight": 120, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_wall_mirror"
     },
     {
       "id": "task_w4", "code": "W4", "name": "Wet Rack/Herb Service", "description": "Service and replenish the wet rack and herb displays.",
-      "skill_required": ["Wet Rack/Herbs Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 180, "task_type": "standard" as const, "priority_weight": 130, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_wall_wet"
+      "skill_required": ["Wet Rack/Herbs Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 180, "task_type": "standard", "priority_weight": 130, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_wall_wet"
     },
     {
       "id": "task_mid_morning_refill", "code": "MMR", "name": "Mid-Morning Refill (High Turnover)", "description": "Perform a mid-morning refill of high-turnover items.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "10:30", "due_by": "11:00", "estimated_duration": 30, "task_type": "standard" as const, "priority_weight": 200, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_front"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "10:30", "due_by": "11:00", "estimated_duration": 30, "task_type": "standard", "priority_weight": 200, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_front"
     },
     {
       "id": "task_floor_check", "code": "FLOOR", "name": "Post-Set Floor Check & Spot Clean", "description": "Perform a floor check after initial setup and conduct spot cleaning.",
-      "skill_required": ["Quality Checks"], "earliest_start": "11:00", "due_by": "11:30", "estimated_duration": 15, "task_type": "standard" as const, "priority_weight": 210, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_floor"
+      "skill_required": ["Quality Checks"], "earliest_start": "11:00", "due_by": "11:30", "estimated_duration": 15, "task_type": "standard", "priority_weight": 210, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_floor"
     },
     {
       "id": "task_bag_roll_restock", "code": "BAGS", "name": "Produce Bag Roll Restock", "description": "Restock produce bag rolls at all stations.",
-      "skill_required": ["Quality Checks"], "earliest_start": "11:00", "due_by": "11:30", "estimated_duration": 15, "task_type": "standard" as const, "priority_weight": 220, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_floor"
+      "skill_required": ["Quality Checks"], "earliest_start": "11:00", "due_by": "11:30", "estimated_duration": 15, "task_type": "standard", "priority_weight": 220, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_floor"
     },
     {
       "id": "task_markdowns", "code": "MD", "name": "Markdowns", "description": "Identify and markdown items nearing expiration or quality decline.",
-      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 60, "task_type": "standard" as const, "priority_weight": 300, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_backroom"
+      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 60, "task_type": "standard", "priority_weight": 300, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
       "id": "task_throwaways", "code": "WASTE", "name": "Throwaways", "description": "Process and dispose of unsaleable produce.",
-      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 45, "task_type": "standard" as const, "priority_weight": 310, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_backroom"
+      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 45, "task_type": "standard", "priority_weight": 310, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
       "id": "task_flashfood", "code": "FFB", "name": "FlashFood Bags", "description": "Prepare FlashFood bags for discounted produce.",
-      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 30, "task_type": "standard" as const, "priority_weight": 320, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_backroom"
+      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 30, "task_type": "standard", "priority_weight": 320, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
       "id": "task_ims_scan", "code": "IMS", "name": "IMS Audits", "description": "Perform daily IMS inventory scans and audits.",
-      "skill_required": ["IMS", "Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 60, "task_type": "standard" as const, "priority_weight": 330, "allow_multi_assign": false, "recurrence_type": "daily" as const, "areaId": "area_backroom"
+      "skill_required": ["IMS", "Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 60, "task_type": "standard", "priority_weight": 330, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
       "id": "task_process_organics", "code": "ORG", "name": "Process Organics", "description": "Process and stock organic produce deliveries.",
-      "skill_required": ["Backroom Organization"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep" as const, "priority_weight": 500, "allow_multi_assign": true, "recurrence_type": "daily" as const, "areaId": "area_backroom"
+      "skill_required": ["Backroom Organization"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep", "priority_weight": 500, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
       "id": "upkeep_sweep", "code": "SWEEP", "name": "Sweep & Mop Floor", "description": "Maintain cleanliness of the produce floor.",
-      "skill_required": ["Quality Checks"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep" as const, "priority_weight": 510, "allow_multi_assign": true, "recurrence_type": "daily" as const, "areaId": "area_floor"
+      "skill_required": ["Quality Checks"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep", "priority_weight": 510, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_floor"
     },
     {
       "id": "upkeep_facing", "code": "FACE", "name": "Facing Displays", "description": "Continuously face and rotate produce on displays.",
-      "skill_required": ["Dry Table/Display"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep" as const, "priority_weight": 520, "allow_multi_assign": true, "recurrence_type": "daily" as const, "areaId": "area_dry_table"
+      "skill_required": ["Dry Table/Display"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep", "priority_weight": 520, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
       "id": "upkeep_backroom", "code": "BCLR", "name": "Backroom Cleanliness", "description": "Maintain organization and cleanliness in the produce backroom.",
-      "skill_required": ["Backroom Organization"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep" as const, "priority_weight": 530, "allow_multi_assign": true, "recurrence_type": "daily" as const, "areaId": "area_backroom"
+      "skill_required": ["Backroom Organization"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep", "priority_weight": 530, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_backroom"
     }
-  ].map(t => ({ ...t, id: t.id || uuid(), code: t.code || (t.id || uuid()).substring(0,4).toUpperCase(), skill_required: t.skill_required || [] as string[], recurrence_type: t.recurrence_type || 'daily', task_type: t.task_type || 'standard', allow_multi_assign: t.allow_multi_assign ?? true, priority_weight: t.priority_weight || 50, estimated_duration: t.estimated_duration || 30, earliest_start: t.earliest_start || '07:00', due_by: t.due_by || '17:00' })),
+  ].map(({ skill_required, ...t }) => ({
+    ...t,
+    id: t.id || uuid(),
+    code: t.code || (t.id || uuid()).substring(0, 4).toUpperCase(),
+    skill_ids: getSkillIds(skill_required || []),
+    recurrence_type: (t.recurrence_type || 'daily') as RecurrenceType,
+    task_type: (t.task_type || 'standard') as TaskType,
+    allow_multi_assign: t.allow_multi_assign ?? true,
+    priority_weight: t.priority_weight || 50,
+    estimated_duration: t.estimated_duration || 30,
+    earliest_start: t.earliest_start || '07:00',
+    due_by: t.due_by || '17:00'
+  })),
   explicit_rules: [
     {
-      id: uuid(), "taskId": "task_dob_order",
+      id: uuid(), "task_id": "task_dob_order",
       "primary_selector": { id: uuid(), mode: "member", value: "m_marlon" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_james" },
@@ -291,11 +286,11 @@ export const initialMockData: SupabaseTableData = {
         { id: uuid(), mode: "member", value: "m_kenneth" },
         { id: uuid(), mode: "member", value: "m_william" }
       ],
-      "exclude_day": ["Wednesday"],
+      "exclude_day": ["Wed"],
       "reason_template": "Assigned to {{memberName}} for DOB Order (Primary/Fallback Rule)."
     },
     {
-      id: uuid(), "taskId": "task_freshpak_order",
+      id: uuid(), "task_id": "task_freshpak_order",
       "primary_selector": { id: uuid(), mode: "member", value: "m_sandra" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_deb" },
@@ -303,11 +298,11 @@ export const initialMockData: SupabaseTableData = {
         { id: uuid(), mode: "member", value: "m_marlon" },
         { id: uuid(), mode: "member", value: "m_james" }
       ],
-      "exclude_day": ["Tuesday"],
+      "exclude_day": ["Tue"],
       "reason_template": "Assigned to {{memberName}} for Freshpak Order (Primary/Fallback Rule)."
     },
     {
-      id: uuid(), "taskId": "task_w1",
+      id: uuid(), "task_id": "task_w1",
       "primary_selector": { id: uuid(), mode: "member", value: "m_sandra" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_heidi" },
@@ -317,7 +312,7 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for W1 Freshpak Wall Service (Primary/Fallback Rule)."
     },
     {
-      id: uuid(), "taskId": "task_w2",
+      id: uuid(), "task_id": "task_w2",
       "primary_selector": { id: uuid(), mode: "member", value: "m_deb" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_sandra" }
@@ -325,7 +320,7 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for W2 Salad/Juice Wall Service (Primary/Fallback Rule)."
     },
     {
-      id: uuid(), "taskId": "task_w3",
+      id: uuid(), "task_id": "task_w3",
       "primary_selector": { id: uuid(), mode: "member", value: "m_john" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_william" }
@@ -333,7 +328,7 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for W3 Mirror Wall Service (Primary/Fallback Rule)."
     },
     {
-      id: uuid(), "taskId": "task_w4",
+      id: uuid(), "task_id": "task_w4",
       "primary_selector": { id: uuid(), mode: "member", value: "m_heidi" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_john" }
@@ -341,8 +336,8 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for W4 Wet Rack/Herb Service (Primary/Fallback Rule)."
     },
     {
-      id: uuid(), "taskId": "task_markdowns",
-      "primary_selector": { id: uuid(), mode: "tag", value: "Quality Checks" },
+      id: uuid(), "task_id": "task_markdowns",
+      "primary_selector": { id: uuid(), mode: "role_tag", value: "Quality Checks" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_sandra" },
         { id: uuid(), mode: "member", value: "m_deb" },
@@ -356,8 +351,8 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for Markdowns (Quality Checks Rule)."
     },
     {
-      id: uuid(), "taskId": "task_throwaways",
-      "primary_selector": { id: uuid(), mode: "tag", value: "Quality Checks" },
+      id: uuid(), "task_id": "task_throwaways",
+      "primary_selector": { id: uuid(), mode: "role_tag", value: "Quality Checks" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_sandra" },
         { id: uuid(), mode: "member", value: "m_deb" },
@@ -371,8 +366,8 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for Throwaways (Quality Checks Rule)."
     },
     {
-      id: uuid(), "taskId": "task_flashfood",
-      "primary_selector": { id: uuid(), mode: "tag", value: "Quality Checks" },
+      id: uuid(), "task_id": "task_flashfood",
+      "primary_selector": { id: uuid(), mode: "role_tag", value: "Quality Checks" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_sandra" },
         { id: uuid(), mode: "member", value: "m_deb" },
@@ -386,8 +381,8 @@ export const initialMockData: SupabaseTableData = {
       "reason_template": "Assigned to {{memberName}} for FlashFood Bags (Quality Checks Rule)."
     },
     {
-      id: uuid(), "taskId": "task_ims_scan",
-      "primary_selector": { id: uuid(), mode: "tag", value: "Quality Checks" },
+      id: uuid(), "task_id": "task_ims_scan",
+      "primary_selector": { id: uuid(), mode: "role_tag", value: "Quality Checks" },
       "fallback_selectors": [
         { id: uuid(), mode: "member", value: "m_sandra" },
         { id: uuid(), mode: "member", value: "m_deb" },
@@ -402,9 +397,10 @@ export const initialMockData: SupabaseTableData = {
     }
   ],
   weekly_schedule: [
+    // This entry is dynamically set to the current day to ensure the assignment engine has staff.
     {
       id: uuid(),
-      date: dayjs().format(DATE_FORMAT), // Add a schedule for the current day
+      date: dayjs().format(DATE_FORMAT),
       shifts: [
         { id: uuid(), memberId: 'm_marlon', start: '07:00', end: '15:00', shift_class: 'Opening' },
         { id: uuid(), memberId: 'm_sandra', start: '06:00', end: '14:00', shift_class: 'Opening' },
@@ -419,7 +415,8 @@ export const initialMockData: SupabaseTableData = {
         { id: uuid(), memberId: 'm_alice', start: '06:00', end: '14:30', shift_class: 'Opening' },
         { id: uuid(), memberId: 'm_bob', start: '09:00', end: '17:30', shift_class: 'Mid-Shift' },
         { id: uuid(), memberId: 'm_charlie', start: '07:00', end: '15:30', shift_class: 'Opening' },
-      ]
+      ],
+      flags: { source: 'sample_data' }
     }
   ],
   assignments: [],
