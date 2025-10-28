@@ -24,8 +24,7 @@ import Header from './components/Header';
 import MembersTab from './components/MembersTab';
 import TasksTab from './components/TasksTab';
 import RulesTab from './components/RulesTab';
-// FIX: Changed import path to point to the complete ScheduleTab component.
-import ScheduleTab from './src/components/ScheduleTab';
+import ScheduleTab from './components/ScheduleTab';
 import AssignmentsTab from './components/AssignmentsTab';
 import ReviewTab from './components/ReviewTab';
 import SettingsTab from './components/SettingsTab';
@@ -217,87 +216,4 @@ const AppContent: React.FC = () => {
   }, [members, tasks, explicitRules, weeklySchedule, settings, orderSets, orderSetItems, fetchData, addToast]);
 
   const handleAutoFillWeek = useCallback(async (startDate: string, numberOfDays: number) => {
-    setLoading(true); addToast({ message: 'Auto-filling schedule...', type: 'info' });
-    try {
-      const { generatedPlannedShifts, conflicts } = await autoFillSchedule({ members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, targetDates: getNextNDays(startDate, numberOfDays), currentWeeklySchedule: weeklySchedule });
-      await handleSavePlannedShift(generatedPlannedShifts);
-      setPlannerConflicts(conflicts);
-      addToast({ message: 'Auto-fill complete!', type: 'success' });
-    } catch (err) { addToast({ message: `Auto-fill failed: ${(err as Error).message}`, type: 'error' });
-    } finally { setLoading(false); }
-  }, [members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, weeklySchedule, handleSavePlannedShift, addToast]);
-
-  const handleRepairCoverage = useCallback(async (date: string, areaId?: ID, timeslot?: string) => {
-    setLoading(true); addToast({ message: 'Repairing coverage...', type: 'info' });
-    try {
-      const { generatedPlannedShifts, conflicts } = await autoFillSchedule({ members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, targetDates: [date], currentWeeklySchedule: weeklySchedule });
-      await handleSavePlannedShift(generatedPlannedShifts);
-      setPlannerConflicts(conflicts);
-      addToast({ message: 'Repair complete!', type: 'success' });
-    } catch (err) { addToast({ message: `Repair failed: ${(err as Error).message}`, type: 'error' });
-    } finally { setLoading(false); }
-  }, [members, skills, tasks, areas, staffingTargets, availability, shiftTemplates, plannedShifts, settings, weeklySchedule, handleSavePlannedShift, addToast]);
-
-  const handlePublishPlannedShifts = useCallback(async (startDate: string, numberOfDays: number) => {
-    setLoading(true); addToast({ message: 'Publishing shifts...', type: 'info' });
-    try {
-      const datesToPublish = getNextNDays(startDate, numberOfDays);
-      const newWeeklyScheduleDays = publishPlannedShiftsMock(plannedShifts, weeklySchedule, datesToPublish);
-      if (newWeeklyScheduleDays.length > 0) await handleSaveWeeklySchedule(newWeeklyScheduleDays);
-      addToast({ message: 'Planned shifts published!', type: 'success' });
-    } catch (err) { addToast({ message: `Publishing failed: ${(err as Error).message}`, type: 'error' });
-    } finally { setLoading(false); }
-  }, [plannedShifts, weeklySchedule, handleSaveWeeklySchedule, addToast]);
-  
-  const handleScheduleParsed = useCallback((parsedShifts: ParsedScheduleShift[]) => {
-      setShiftsForManualImport(parsedShifts);
-      setActiveTab('schedule');
-      addToast({ message: 'Parsed shifts ready for review in the Manual Schedule Editor.', type: 'info' });
-  }, [addToast]);
-
-  const renderTab = () => {
-    if (loading) return <div className="p-6 text-center">Loading...</div>;
-    if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
-    switch (activeTab) {
-      case 'assignments': return <AssignmentsTab assignments={assignments} dailyWorkloads={dailyWorkloads} unassignedTasks={unassignedTasks} overCapacityMembers={overCapacityMembers} members={members} tasks={tasks} settings={settings} weeklySchedule={weeklySchedule} onGenerateAssignments={handleGenerateAssignments} onLockAssignment={handleLockAssignment} onSaveAssignmentChanges={handleSaveAssignmentChanges} />;
-      case 'planner': return <PlannerTab members={members} areas={areas} staffingTargets={staffingTargets} availability={availability} shiftTemplates={shiftTemplates} plannedShifts={plannedShifts} conflicts={plannerConflicts} settings={settings} onSaveStaffingTarget={handleSaveStaffingTarget} onDeleteStaffingTarget={handleDeleteStaffingTarget} onSaveAvailability={handleSaveAvailability} onDeleteAvailability={handleDeleteAvailability} onSaveShiftTemplate={handleSaveShiftTemplate} onDeleteShiftTemplate={handleDeleteShiftTemplate} onSavePlannedShift={handleSavePlannedShift} onDeletePlannedShift={handleDeletePlannedShift} onDeletePlannedShiftsByDate={handleDeletePlannedShiftsByDate} onAutoFillWeek={handleAutoFillWeek} onRepairCoverage={handleRepairCoverage} onPublish={handlePublishPlannedShifts} shiftPatterns={shiftPatterns} onSaveShiftPattern={handleSaveShiftPattern} onDeleteShiftPattern={handleDeleteShiftPattern} />;
-      case 'schedule': return <ScheduleTab members={members} weeklySchedule={weeklySchedule} shiftPatterns={shiftPatterns} onSaveWeeklySchedule={handleSaveWeeklySchedule} onDeleteWeeklySchedule={handleDeleteWeeklySchedule} fetchData={fetchData} onSaveMember={handleSaveMember} onSaveShiftPattern={handleSaveShiftPattern} onDeleteShiftPattern={handleDeleteShiftPattern} initialShiftsForEditor={shiftsForManualImport} onEditorClosed={() => setShiftsForManualImport(null)} />;
-      case 'members': return <MembersTab 
-        members={members} 
-        skills={skills}
-        memberSkills={memberSkills}
-        memberAliases={memberAliases}
-        onSaveMember={handleSaveMember} 
-        onDeleteMember={handleDeleteMember}
-        onSaveSkill={handleSaveSkill}
-        onDeleteSkill={handleDeleteSkill}
-        onSaveMemberSkill={handleSaveMemberSkill}
-        onDeleteMemberSkill={handleDeleteMemberSkill}
-        onSaveAlias={handleSaveAlias}
-        onDeleteAlias={handleDeleteAlias}
-      />;
-      case 'tasks': return <TasksTab tasks={tasks} areas={areas} orderSets={orderSets} orderSetItems={orderSetItems} onSaveTask={handleSaveTask} onDeleteTask={handleDeleteTask} onSaveArea={handleSaveArea} onDeleteArea={handleDeleteArea} onSaveOrderSet={handleSaveOrderSet} onDeleteOrderSet={handleDeleteOrderSet} onSaveOrderSetItem={handleSaveOrderSetItem} onDeleteOrderSetItem={handleDeleteOrderSetItem} />;
-      case 'rules': return <RulesTab explicitRules={explicitRules} members={members} tasks={tasks} onSaveRule={handleSaveRule} onDeleteRule={handleDeleteRule} />;
-      case 'review': return <ReviewTab assignments={assignments} dailyWorkloads={dailyWorkloads} unassignedTasks={unassignedTasks} overCapacityMembers={overCapacityMembers} members={members} tasks={tasks} templates={templates} settings={settings} />;
-      case 'image-analysis': return <GeminiImageAnalyzer onScheduleParsed={handleScheduleParsed} />;
-      case 'settings': return <SettingsTab settings={settings} templates={templates} onSaveSettings={handleSaveSettings} onSaveTemplate={handleSaveTemplate} onDeleteTemplate={handleDeleteTemplate} onImportData={() => {}} onExportData={() => {}} onClearAllData={() => {}} />;
-      case 'data-architecture': return <DataArchitectureTab />;
-      default: return <div>Select a tab</div>;
-    }
-  };
-
-  return (
-    <div className="bg-background min-h-screen">
-      <Header activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="container mx-auto p-4">{renderTab()}</main>
-    </div>
-  );
-};
-
-const App: React.FC = () => (
-  <ToastProvider>
-    <AppContent />
-  </ToastProvider>
-);
-
-export default App;
+    setLoading(true);
