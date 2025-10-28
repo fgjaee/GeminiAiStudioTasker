@@ -45,7 +45,8 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, exist
   }, []);
 
   const handleSkillChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedIds = Array.from(e.target.selectedOptions, option => option.value);
+    // FIX: Explicitly type 'option' to resolve 'unknown' type error.
+    const selectedIds = Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value);
     setFormData(prev => ({...prev, skill_ids: selectedIds}));
   };
 

@@ -104,7 +104,7 @@ Supervisor Sign: ________________
 const allSkillNames = [
   "Produce Lead", "Ordering", "Dry Table/Display", "Quality Checks", "Backroom Organization", "Freshpak Wall",
   "Salads-Juice Wall", "Mirror Wall", "Wet Rack/Herbs Wall", "Receiving & Breakdown", "Cutter/Prep", "IMS",
-  "Signs/Ad Change", "Produce Clerk"
+  "Signs/Ad Change", "Produce Clerk", "Truck Sorting", "Backroom Logistics"
 ];
 const uniqueSkillNames = [...new Set(allSkillNames)];
 const initialSkills: Skill[] = uniqueSkillNames.map((name, index) => ({ id: `skill_${index}`, name }));
@@ -115,7 +115,8 @@ const memberData = [
     { id: "m_alice", name: "Alice Johnson", title: "Produce Lead", role_tags: ["Produce Lead", "Ordering"], strengths: ["Produce Lead", "Ordering", "Dry Table/Display", "Quality Checks", "Backroom Organization", "Freshpak Wall", "Salads-Juice Wall", "Mirror Wall", "Wet Rack/Herbs Wall", "Receiving & Breakdown", "Cutter/Prep", "IMS", "Signs/Ad Change"], fixed_commitments_minutes: 60, max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Opening"] as ShiftClass[], availability: [ { id: uuid(), day: 'Mon', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Tue', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Wed', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Thu', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Fri', start: '06:00', end: '16:00' }, { id: uuid(), day: 'Sat', start: '07:00', end: '15:00' }, { id: uuid(), day: 'Sun', start: '07:00', end: '15:00' } ], default_tasks: [] },
     { id: "m_bob", name: "Bob Smith", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Produce Clerk", "Dry Table/Display", "Quality Checks", "Backroom Organization"], fixed_commitments_minutes: 30, max_daily_minutes: 420, max_weekly_minutes: 2000, shift_class_preference: ["Mid-Shift", "Closing"] as ShiftClass[], availability: [ { id: uuid(), day: 'Mon', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Tue', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Wed', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Thu', start: '09:00', end: '18:00' }, { id: uuid(), day: 'Fri', start: '09:00', end: '18:00' } ], default_tasks: [] },
     { id: "m_charlie", name: "Charlie Brown", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Produce Clerk", "Wet Rack/Herbs Wall", "Salads-Juice Wall", "Quality Checks"], fixed_commitments_minutes: 45, max_daily_minutes: 450, max_weekly_minutes: 2200, shift_class_preference: ["Opening", "Mid-Shift"] as ShiftClass[], availability: [ { id: uuid(), day: 'Mon', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Tue', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Wed', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Thu', start: '07:00', end: '16:00' }, { id: uuid(), day: 'Fri', start: '07:00', end: '16:00' } ], default_tasks: [] },
-    { id: "m_marlon", name: "Marlon", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Opening"] as ShiftClass[], availability: [] },
+    { id: "m_marlon", name: "Marlon", title: "Produce Clerk", role_tags: ["Produce Clerk", "Overnight"], strengths: ["Ordering"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Opening", "Overnight"] as ShiftClass[], availability: [] },
+    { id: "m_soloman", name: "Soloman", title: "Produce Clerk", role_tags: ["Produce Clerk", "Overnight"], strengths: ["Truck Sorting", "Backroom Logistics", "Backroom Organization", "Receiving & Breakdown"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Overnight"] as ShiftClass[], availability: [] },
     { id: "m_james", name: "James", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering", "Freshpak Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Mid-Shift"] as ShiftClass[], availability: [] },
     { id: "m_deb", name: "Deb", title: "Produce Lead", role_tags: ["Produce Lead", "Ordering"], strengths: ["Ordering", "Salads-Juice Wall"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: ["Closing"] as ShiftClass[], availability: [] },
     { id: "m_kenneth", name: "Kenneth", title: "Produce Clerk", role_tags: ["Produce Clerk"], strengths: ["Ordering"], fixed_commitments_minutes: 0, default_tasks: [], max_daily_minutes: 480, max_weekly_minutes: 2400, shift_class_preference: [] as ShiftClass[], availability: [] },
@@ -148,8 +149,16 @@ export const initialMockData: SupabaseTableData = {
   member_aliases: [],
   tasks: [
     {
+      "id": "task_truck", "code": "TRK", "name": "Truck Unload & Sort", "description": "Unload overnight delivery truck and sort produce for stocking.",
+      "skill_required": ["Truck Sorting", "Receiving & Breakdown"], "earliest_start": "04:00", "due_by": "07:00", "estimated_duration": 180, "task_type": "standard", "priority_weight": 5, "allow_multi_assign": false, "recurrence_type": "daily", "is_must_run": true, "areaId": "area_backroom"
+    },
+    {
+      "id": "task_pull_backstock", "code": "PULL", "name": "Pull Backstock Carts to Floor", "description": "Pull all temperature-safe backstock carts to the sales floor.",
+      "skill_required": ["Backroom Organization"], "earliest_start": "06:00", "due_by": "07:00", "estimated_duration": 30, "task_type": "standard", "priority_weight": 9, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_backroom"
+    },
+    {
       "id": "task_inventory", "code": "INV", "name": "Monthly Full Produce Inventory", "description": "Conduct a full inventory count of all produce items in the department.",
-      "skill_required": ["Backroom Organization", "IMS"], "earliest_start": "08:00", "due_by": "EOD", "estimated_duration": 180, "task_type": "standard", "priority_weight": 1, "allow_multi_assign": false, "recurrence_type": "monthly", "recurrence_detail": "Last Sunday", "areaId": "area_backroom"
+      "skill_required": ["Backroom Organization", "IMS"], "earliest_start": "08:00", "due_by": "EOD", "estimated_duration": 180, "task_type": "project", "priority_weight": 1, "allow_multi_assign": false, "recurrence_type": "monthly", "recurrence_detail": "Last Sunday", "areaId": "area_backroom"
     },
     {
       "id": "task_ad_change", "code": "AD", "name": "Weekly Ad/First Impression Change", "description": "Update all ad signage and refresh first impression displays.",
@@ -176,7 +185,7 @@ export const initialMockData: SupabaseTableData = {
       "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 30, "task_type": "standard", "priority_weight": 10, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_front"
     },
     {
-      "id": "t_t1", "code": "T1", "name": "Tropical/Harvest Table", "description": "Stock and maintain the tropical and harvest produce table.",
+      "id": "t_t4", "code": "T4", "name": "Banana/Citrus Table", "description": "Stock and maintain the banana and citrus display table.",
       "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard", "priority_weight": 20, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
@@ -184,11 +193,11 @@ export const initialMockData: SupabaseTableData = {
       "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard", "priority_weight": 30, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
-      "id": "t_t3", "code": "T3", "name": "Berries/Grapes Table", "description": "Stock and maintain the berries and grapes display table.",
+      "id": "t_t1", "code": "T1", "name": "Tropical/Harvest Table", "description": "Stock and maintain the tropical and harvest produce table.",
       "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard", "priority_weight": 40, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
-      "id": "t_t4", "code": "T4", "name": "Banana/Citrus Table", "description": "Stock and maintain the banana and citrus display table.",
+      "id": "t_t3", "code": "T3", "name": "Berries/Grapes Table", "description": "Stock and maintain the berries and grapes display table.",
       "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard", "priority_weight": 50, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
@@ -236,6 +245,14 @@ export const initialMockData: SupabaseTableData = {
       "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 60, "task_type": "standard", "priority_weight": 300, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
+      "id": "task_returns", "code": "RET", "name": "Shop Back Customer Returns", "description": "Process items returned by customers at the service desk.",
+      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 30, "task_type": "standard", "priority_weight": 315, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
+    },
+    {
+      "id": "task_putbacks", "code": "PUT", "name": "Customer Putbacks", "description": "Collect and restock items left by customers around the store.",
+      "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 30, "task_type": "standard", "priority_weight": 316, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_floor"
+    },
+    {
       "id": "task_throwaways", "code": "WASTE", "name": "Throwaways", "description": "Process and dispose of unsaleable produce.",
       "skill_required": ["Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 45, "task_type": "standard", "priority_weight": 310, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
     },
@@ -248,12 +265,24 @@ export const initialMockData: SupabaseTableData = {
       "skill_required": ["IMS", "Quality Checks"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 60, "task_type": "standard", "priority_weight": 330, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
+      "id": "task_breakdown_pallets", "code": "PAL", "name": "Breakdown Pallets in Cooler", "description": "Fully breakdown and combine previous day pallets in cooler.",
+      "skill_required": ["Backroom Organization", "Backroom Logistics"], "earliest_start": "15:00", "due_by": "EOD", "estimated_duration": 60, "task_type": "standard", "priority_weight": 340, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_backroom"
+    },
+    {
+      "id": "task_tags", "code": "TAG", "name": "Pull Expired Sale Tags", "description": "On Saturday nights, pull all expired sale tags and signs.",
+      "skill_required": ["Signs/Ad Change"], "earliest_start": "20:00", "due_by": "EOD", "estimated_duration": 45, "task_type": "standard", "priority_weight": 350, "allow_multi_assign": true, "recurrence_type": "weekly", "recurrence_detail": "Sat", "areaId": "area_floor"
+    },
+    {
       "id": "task_process_organics", "code": "ORG", "name": "Process Organics", "description": "Process and stock organic produce deliveries.",
       "skill_required": ["Backroom Organization"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep", "priority_weight": 500, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_backroom"
     },
     {
       "id": "upkeep_sweep", "code": "SWEEP", "name": "Sweep & Mop Floor", "description": "Maintain cleanliness of the produce floor.",
       "skill_required": ["Quality Checks"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep", "priority_weight": 510, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_floor"
+    },
+    {
+      "id": "upkeep_cardboard", "code": "CRD", "name": "Clear Empty Cardboard", "description": "Clear empty cardboard from tables and take to bailer.",
+      "skill_required": ["Backroom Logistics"], "earliest_start": "Continuous", "due_by": "Continuous", "estimated_duration": 0, "task_type": "upkeep", "priority_weight": 515, "allow_multi_assign": true, "recurrence_type": "daily", "areaId": "area_floor"
     },
     {
       "id": "upkeep_facing", "code": "FACE", "name": "Facing Displays", "description": "Continuously face and rotate produce on displays.",
@@ -277,6 +306,14 @@ export const initialMockData: SupabaseTableData = {
     due_by: t.due_by || '17:00'
   })),
   explicit_rules: [
+    {
+      id: uuid(), "task_id": "task_truck",
+      "primary_selector": { id: uuid(), mode: "member", value: "m_soloman" },
+      "fallback_selectors": [
+        { id: uuid(), mode: "member", value: "m_marlon" }
+      ],
+      "reason_template": "Assigned to {{memberName}} for Truck Unload & Sort (Primary/Fallback Rule)."
+    },
     {
       id: uuid(), "task_id": "task_dob_order",
       "primary_selector": { id: uuid(), mode: "member", value: "m_marlon" },
@@ -402,7 +439,8 @@ export const initialMockData: SupabaseTableData = {
       id: uuid(),
       date: dayjs().format(DATE_FORMAT),
       shifts: [
-        { id: uuid(), memberId: 'm_marlon', start: '07:00', end: '15:00', shift_class: 'Opening' },
+        { id: uuid(), memberId: 'm_soloman', start: '00:00', end: '08:00', shift_class: 'Overnight' },
+        { id: uuid(), memberId: 'm_marlon', start: '01:00', end: '09:00', shift_class: 'Overnight' },
         { id: uuid(), memberId: 'm_sandra', start: '06:00', end: '14:00', shift_class: 'Opening' },
         { id: uuid(), memberId: 'm_deb', start: '14:00', end: '22:00', shift_class: 'Closing' },
         { id: uuid(), memberId: 'm_heidi', start: '14:00', end: '22:00', shift_class: 'Closing' },
@@ -445,10 +483,10 @@ export const initialMockData: SupabaseTableData = {
   order_set_items: [
     // Populate with some default tasks, using IDs from the 'tasks' array above
     { id: uuid(), order_set_id: 'default-order-set', task_id: 't_first_impressions', position: 10 },
-    { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t1', position: 20 },
+    { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t4', position: 20 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t2', position: 30 },
-    { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t3', position: 40 },
-    { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t4', position: 50 },
+    { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t1', position: 40 },
+    { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t3', position: 50 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t5', position: 60 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t6', position: 70 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 't_t7', position: 80 },
@@ -456,8 +494,9 @@ export const initialMockData: SupabaseTableData = {
     { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_w2', position: 110 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_w3', position: 120 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_w4', position: 130 },
-    { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_dob_order', position: 5 },
-    { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_freshpak_order', position: 6 },
+    { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_truck', position: 5 },
+    { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_dob_order', position: 6 },
+    { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_freshpak_order', position: 7 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_floor_check', position: 210 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_bag_roll_restock', position: 220 },
     { id: uuid(), order_set_id: 'default-order-set', task_id: 'task_markdowns', position: 300 },
