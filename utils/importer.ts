@@ -11,6 +11,9 @@ import {
   RecurrenceType,
   TaskType,
   Member,
+  MemberSkill,
+  Skill,
+  MemberAlias,
 } from '../types';
 import { uuid } from './helpers';
 import dayjs from 'dayjs';

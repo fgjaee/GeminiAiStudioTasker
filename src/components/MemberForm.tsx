@@ -1,10 +1,10 @@
 // components/MemberForm.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Member, ID, ShiftClass, Skill, MemberSkill } from '../types';
-import Input from './Input';
-import ChipInput from './ChipInput';
-import Button from './Button';
-import Select from './Select';
+import Input from '../../components/Input';
+import ChipInput from '../../components/ChipInput';
+import Button from '../../components/Button';
+import Select from '../../components/Select';
 import { uuid } from '../services/utils';
 
 interface MemberFormProps {
@@ -47,7 +47,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSave, onCancel, exist
 
   const handleSkillChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       // FIX: Cast option to HTMLOptionElement to access the 'value' property correctly.
-      const selectedIds = Array.from((e.target as HTMLSelectElement).selectedOptions, option => (option as HTMLOptionElement).value);
+      const selectedIds = Array.from((e.target as HTMLSelectElement).selectedOptions, (option: HTMLOptionElement) => option.value);
       setFormData(prev => ({...prev, skill_ids: selectedIds}));
   };
 

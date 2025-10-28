@@ -1,18 +1,17 @@
-
 // components/ScheduleTab.tsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleShift, ID, MemberAlias } from '../types';
-import Button from './Button';
-import Modal from './Modal';
+import Button from '../../components/Button';
+import Modal from '../../components/Modal';
 import { Upload, AlertTriangle, Pencil } from 'lucide-react';
 import dayjs from 'dayjs';
 // FIX: Import uuid and SHORT_WEEKDAY_NAMES
 import { assertUniqueKeys, uuid } from '../services/utils';
-import { SHORT_WEEKDAY_NAMES } from '../constants';
+import { SHORT_WEEKDAY_NAMES } from '../../constants';
 import { importSchedule } from '../services/importSchedule';
 import ManualScheduleEditor from './ManualScheduleEditor';
 import ResolveAliasModal from './ResolveAliasModal';
-import { useToast } from './Toast';
+import { useToast } from '../../components/Toast';
 
 interface ScheduleTabProps {
   members: Member[];

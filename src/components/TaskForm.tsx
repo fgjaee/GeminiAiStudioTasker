@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Task, Area, RecurrenceType, TaskType, Skill, ID } from '../types';
-import Input from './Input';
-import Textarea from './Textarea';
-import Select from './Select';
-import Button from './Button';
+import Input from '../../components/Input';
+import Textarea from '../../components/Textarea';
+import Select from '../../components/Select';
+import Button from '../../components/Button';
 import { uuid } from '../services/utils';
 
 interface TaskFormProps {
@@ -48,7 +47,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
 
    const handleSkillChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       // FIX: Cast e.target to HTMLSelectElement to access selectedOptions
-      const selectedIds = Array.from((e.target as HTMLSelectElement).selectedOptions, option => option.value);
+      const selectedIds = Array.from((e.target as HTMLSelectElement).selectedOptions, (option: HTMLOptionElement) => option.value);
       setFormData(prev => ({...prev, skill_ids: selectedIds}));
   };
 

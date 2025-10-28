@@ -2,13 +2,13 @@
 // components/ManualScheduleEditor.tsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { Member, ID, ParsedScheduleShift, ShiftPattern } from '../types';
-import Button from './Button';
+import Button from '../../components/Button';
 import { Plus, Trash2 } from 'lucide-react';
-import { SHORT_WEEKDAY_NAMES } from '../constants';
+import { SHORT_WEEKDAY_NAMES } from '../../constants';
 import { uuid, assertUniqueKeys } from '../services/utils';
-import Select from './Select';
-import Input from './Input';
-import { useToast } from './Toast';
+import Select from '../../components/Select';
+import Input from '../../components/Input';
+import { useToast } from '../../components/Toast';
 
 interface ManualScheduleEditorProps {
   initialShifts: ParsedScheduleShift[];

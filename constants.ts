@@ -213,6 +213,10 @@ export const initialMockData: SupabaseTableData = {
       "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 60, "task_type": "standard", "priority_weight": 80, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
     },
     {
+      "id": "t_t8", "code": "T8", "name": "Dry Stock", "description": "Stock and maintain dry stock items like nuts, croutons, and dried fruit.",
+      "skill_required": ["Dry Table/Display"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 45, "task_type": "standard", "priority_weight": 90, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_dry_table"
+    },
+    {
       "id": "task_w1", "code": "W1", "name": "Freshpak Wall Service", "description": "Service and replenish the fresh-packed produce wall.",
       "skill_required": ["Freshpak Wall"], "earliest_start": "07:00", "due_by": "09:00", "estimated_duration": 90, "task_type": "standard", "priority_weight": 100, "allow_multi_assign": false, "recurrence_type": "daily", "areaId": "area_wall_freshpak"
     },
@@ -313,6 +317,27 @@ export const initialMockData: SupabaseTableData = {
         { id: uuid(), mode: "member", value: "m_marlon" }
       ],
       "reason_template": "Assigned to {{memberName}} for Truck Unload & Sort (Primary/Fallback Rule)."
+    },
+    {
+      id: uuid(), "task_id": "task_pull_backstock",
+      "primary_selector": { id: uuid(), mode: "member", value: "m_soloman" },
+      "fallback_selectors": [],
+      "prefer_shift_class": 'Overnight',
+      "reason_template": "Assigned to {{memberName}} as a primary overnight duty."
+    },
+    {
+      id: uuid(), "task_id": "task_breakdown_pallets",
+      "primary_selector": { id: uuid(), mode: "member", value: "m_soloman" },
+      "fallback_selectors": [],
+      "prefer_shift_class": 'Overnight',
+      "reason_template": "Assigned to {{memberName}} as a primary overnight duty."
+    },
+    {
+      id: uuid(), "task_id": "task_tags",
+      "primary_selector": { id: uuid(), mode: "member", value: "m_soloman" },
+      "fallback_selectors": [],
+      "prefer_shift_class": 'Overnight',
+      "reason_template": "Assigned to {{memberName}} as a primary Saturday overnight duty."
     },
     {
       id: uuid(), "task_id": "task_dob_order",

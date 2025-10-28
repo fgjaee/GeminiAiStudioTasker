@@ -2,9 +2,9 @@
 // components/ResolveAliasModal.tsx
 import React, { useState, useMemo } from 'react';
 import { Member, ID } from '../types';
-import Modal from './Modal';
-import Select from './Select';
-import Button from './Button';
+import Modal from '../../components/Modal';
+import Select from '../../components/Select';
+import Button from '../../components/Button';
 
 interface ResolveAliasModalProps {
   isOpen: boolean;

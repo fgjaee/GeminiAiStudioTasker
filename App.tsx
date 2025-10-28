@@ -24,7 +24,8 @@ import Header from './components/Header';
 import MembersTab from './components/MembersTab';
 import TasksTab from './components/TasksTab';
 import RulesTab from './components/RulesTab';
-import ScheduleTab from './components/ScheduleTab';
+// FIX: Changed import path to point to the complete ScheduleTab component.
+import ScheduleTab from './src/components/ScheduleTab';
 import AssignmentsTab from './components/AssignmentsTab';
 import ReviewTab from './components/ReviewTab';
 import SettingsTab from './components/SettingsTab';
@@ -144,7 +145,8 @@ const AppContent: React.FC = () => {
   const handleSaveTask = createSaveHandler<Task>('tasks', 'Task');
   const handleDeleteTask = createDeleteHandler('tasks', 'Task');
   const handleSaveRule = createSaveHandler<ExplicitRule>('explicit_rules', 'Rule');
-  const handleDeleteRule = createDeleteHandler('rules', 'Rule');
+  // FIX: Corrected table name from 'rules' to 'explicit_rules' to match Supabase schema
+  const handleDeleteRule = createDeleteHandler('explicit_rules', 'Rule');
   const handleSaveWeeklySchedule = createSaveHandler<WeeklyScheduleDay>('weekly_schedule', 'Schedule');
   const handleDeleteWeeklySchedule = createDeleteHandler('weekly_schedule', 'Schedule Day');
   const handleSaveAssignmentChanges = createSaveHandler<Assignment>('assignments', 'Assignment');

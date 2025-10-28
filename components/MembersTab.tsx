@@ -107,10 +107,10 @@ const PeopleManager: React.FC<MembersTabProps> = ({ members, skills, memberSkill
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {sortedMembers.map(member => {
+                  // FIX: Use a type predicate to correctly infer the resulting array type as string[]
                   const skillsForMember = memberSkills
                     .filter(ms => ms.member_id === member.id)
                     .map(ms => skillMap.get(ms.skill_id))
-                    // FIX: Use a type predicate to correctly infer the resulting array type as string[]
                     .filter((name): name is string => !!name);
 
                   return (
@@ -179,54 +179,3 @@ const SkillsEditor: React.FC<{skills: Skill[], onSave: (s: Skill) => void, onDel
                       <li key={skill.id} className="flex justify-between items-center p-3">
                           {skill.name}
                           <div className="space-x-2">
-                              <Button size="sm" variant="outline" onClick={() => setEditingSkill(skill)}><Pencil size={14}/></Button>
-                              <Button size="sm" variant="danger" onClick={() => onDelete(skill.id)}><Trash2 size={14}/></Button>
-                          </div>
-                      </li>
-                  ))}
-              </ul>
-            </div>
-        </div>
-    );
-};
-
-
-const AliasesEditor: React.FC<{aliases: MemberAlias[], members: Member[], onSave: (a: MemberAlias) => void, onDelete: (id: ID) => void}> = ({ aliases, members, onSave, onDelete }) => {
-    const [newAlias, setNewAlias] = useState({ member_id: '', alias: '' });
-    const { addToast } = useToast();
-    const memberOptions = useMemo(() => [{value: '', label: 'Select Member'}, ...members.map(m => ({value: m.id, label: m.name}))], [members]);
-    const memberMap = useMemo(() => new Map(members.map(m => [m.id, m.name])), [members]);
-
-    const handleSave = () => {
-        if (!newAlias.member_id || !newAlias.alias.trim()) {
-            addToast({ message: 'Please select a member and provide an alias.', type: 'error'});
-            return;
-        }
-        onSave({ ...newAlias, id: uuid(), alias: normName(newAlias.alias).toLowerCase() });
-        setNewAlias({ member_id: '', alias: '' });
-    };
-
-    return (
-        <div>
-            <h3 className="text-xl font-semibold text-textdark mb-4">Manage Member Aliases</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4 items-end bg-gray-50 p-4 rounded-lg">
-                <Select id="alias-member" label="Member" value={newAlias.member_id} options={memberOptions} onChange={e => setNewAlias(a => ({...a, member_id: e.target.value}))} />
-                <Input id="alias-name" label="Alias (from schedule import)" value={newAlias.alias} onChange={e => setNewAlias(a => ({...a, alias: e.target.value}))} />
-                <Button onClick={handleSave}>Add Alias</Button>
-            </div>
-             <div className="bg-card shadow-lg rounded-lg overflow-hidden mt-4">
-              <ul className="divide-y divide-gray-200">
-                  {aliases.map(alias => (
-                      <li key={alias.id} className="flex justify-between items-center p-3">
-                          <span><strong className="font-mono bg-gray-100 p-1 rounded">{alias.alias}</strong> maps to <strong>{memberMap.get(alias.member_id) || 'Unknown Member'}</strong></span>
-                          <Button size="sm" variant="danger" onClick={() => onDelete(alias.id)}><Trash2 size={14}/></Button>
-                      </li>
-                  ))}
-              </ul>
-            </div>
-        </div>
-    );
-};
-
-
-export default MembersTab;

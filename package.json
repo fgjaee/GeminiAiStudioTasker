@@ -18,7 +18,7 @@
     "@google/genai": "^1.27.0",
     "@supabase/supabase-js": "2.44.4",
     "papaparse": "5.4.1",
-    "xlsx": "latest"
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
