@@ -13,7 +13,7 @@ import {
   MemberSkill,
   MemberAlias,
 } from './types';
-import { supabaseMock } from './services/supabaseMock';
+import { supabaseClient as supabaseMock } from './src/services/supabaseClient';
 import { DEFAULT_MANAGER_SETTINGS } from './constants';
 import { generateAssignmentsMock } from './services/assignmentEngine';
 import { uuid, getNextNDays, assertUniqueKeys } from './utils/helpers';

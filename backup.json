@@ -1,0 +1,2570 @@
+{
+  "members": [
+    {
+      "id": "m_alice",
+      "name": "Alice Johnson",
+      "title": "Produce Lead",
+      "role_tags": [
+        "Produce Lead",
+        "Ordering"
+      ],
+      "fixed_commitments_minutes": 60,
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Opening"
+      ],
+      "availability": [
+        {
+          "id": "5b97cc42-9d08-43a8-ba6d-38a1dd8487d5",
+          "day": "Mon",
+          "start": "06:00",
+          "end": "16:00"
+        },
+        {
+          "id": "17cecf90-12ac-440d-bcb7-1d1af20e0b08",
+          "day": "Tue",
+          "start": "06:00",
+          "end": "16:00"
+        },
+        {
+          "id": "b2febfe5-cf30-4557-9262-c5233c55e783",
+          "day": "Wed",
+          "start": "06:00",
+          "end": "16:00"
+        },
+        {
+          "id": "86611b2a-927e-4275-945a-8c0d2e497255",
+          "day": "Thu",
+          "start": "06:00",
+          "end": "16:00"
+        },
+        {
+          "id": "821c1604-4651-47d6-a74e-364d094cae9a",
+          "day": "Fri",
+          "start": "06:00",
+          "end": "16:00"
+        },
+        {
+          "id": "9ff635b7-cc94-4b0f-ba4a-630eb6b45fbc",
+          "day": "Sat",
+          "start": "07:00",
+          "end": "15:00"
+        },
+        {
+          "id": "0ebfdae2-4fa6-4c51-adf7-14aca976bd29",
+          "day": "Sun",
+          "start": "07:00",
+          "end": "15:00"
+        }
+      ],
+      "default_tasks": [],
+      "skill_ids": [
+        "skill_0",
+        "skill_1",
+        "skill_2",
+        "skill_3",
+        "skill_4",
+        "skill_5",
+        "skill_6",
+        "skill_7",
+        "skill_8",
+        "skill_9",
+        "skill_10",
+        "skill_11",
+        "skill_12"
+      ]
+    },
+    {
+      "id": "m_bob",
+      "name": "Bob Smith",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 30,
+      "max_daily_minutes": 420,
+      "max_weekly_minutes": 2000,
+      "shift_class_preference": [
+        "Mid-Shift",
+        "Closing"
+      ],
+      "availability": [
+        {
+          "id": "b23cea32-db12-4abe-bfff-fc516338532b",
+          "day": "Mon",
+          "start": "09:00",
+          "end": "18:00"
+        },
+        {
+          "id": "141134b3-9bea-4e7d-9576-b80f654fe06d",
+          "day": "Tue",
+          "start": "09:00",
+          "end": "18:00"
+        },
+        {
+          "id": "761fdcc1-6ccb-4dca-8521-29dfa63de906",
+          "day": "Wed",
+          "start": "09:00",
+          "end": "18:00"
+        },
+        {
+          "id": "732bfe24-7ba8-4f79-b24c-7e5bead0ff3a",
+          "day": "Thu",
+          "start": "09:00",
+          "end": "18:00"
+        },
+        {
+          "id": "24c0fd66-7ffd-46c8-b27e-ae22f475bd0e",
+          "day": "Fri",
+          "start": "09:00",
+          "end": "18:00"
+        }
+      ],
+      "default_tasks": [],
+      "skill_ids": [
+        "skill_13",
+        "skill_2",
+        "skill_3",
+        "skill_4"
+      ]
+    },
+    {
+      "id": "m_charlie",
+      "name": "Charlie Brown",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 45,
+      "max_daily_minutes": 450,
+      "max_weekly_minutes": 2200,
+      "shift_class_preference": [
+        "Opening",
+        "Mid-Shift"
+      ],
+      "availability": [
+        {
+          "id": "bea3033d-f2e7-45db-98af-d6ad849aa9a4",
+          "day": "Mon",
+          "start": "07:00",
+          "end": "16:00"
+        },
+        {
+          "id": "bd1059e1-251d-4b8b-9880-871efa771f83",
+          "day": "Tue",
+          "start": "07:00",
+          "end": "16:00"
+        },
+        {
+          "id": "430037e4-1c16-4cc8-9815-db89f8833099",
+          "day": "Wed",
+          "start": "07:00",
+          "end": "16:00"
+        },
+        {
+          "id": "03ba36a6-8129-4ec0-b247-f403b3b78849",
+          "day": "Thu",
+          "start": "07:00",
+          "end": "16:00"
+        },
+        {
+          "id": "0b26e96a-6d05-4258-a82a-495aea4fd773",
+          "day": "Fri",
+          "start": "07:00",
+          "end": "16:00"
+        }
+      ],
+      "default_tasks": [],
+      "skill_ids": [
+        "skill_13",
+        "skill_8",
+        "skill_6",
+        "skill_3"
+      ]
+    },
+    {
+      "id": "m_marlon",
+      "name": "Marlon",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk",
+        "Overnight"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Opening",
+        "Overnight"
+      ],
+      "availability": [],
+      "skill_ids": [
+        "skill_1"
+      ]
+    },
+    {
+      "id": "m_soloman",
+      "name": "Soloman",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk",
+        "Overnight"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Overnight"
+      ],
+      "availability": [],
+      "skill_ids": [
+        "skill_14",
+        "skill_15",
+        "skill_4",
+        "skill_9"
+      ]
+    },
+    {
+      "id": "m_james",
+      "name": "James",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Mid-Shift"
+      ],
+      "availability": [],
+      "skill_ids": [
+        "skill_1",
+        "skill_5"
+      ]
+    },
+    {
+      "id": "m_deb",
+      "name": "Deb",
+      "title": "Produce Lead",
+      "role_tags": [
+        "Produce Lead",
+        "Ordering"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Closing"
+      ],
+      "availability": [],
+      "skill_ids": [
+        "skill_1",
+        "skill_6"
+      ]
+    },
+    {
+      "id": "m_kenneth",
+      "name": "Kenneth",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [],
+      "availability": [],
+      "skill_ids": [
+        "skill_1"
+      ]
+    },
+    {
+      "id": "m_william",
+      "name": "William",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [],
+      "availability": [],
+      "skill_ids": [
+        "skill_1",
+        "skill_7"
+      ]
+    },
+    {
+      "id": "m_sandra",
+      "name": "Sandra",
+      "title": "Produce Lead",
+      "role_tags": [
+        "Produce Lead",
+        "Ordering"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Opening"
+      ],
+      "availability": [],
+      "skill_ids": [
+        "skill_1",
+        "skill_5"
+      ]
+    },
+    {
+      "id": "m_beth",
+      "name": "Beth",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Mid-Shift"
+      ],
+      "availability": [],
+      "skill_ids": [
+        "skill_1",
+        "skill_5"
+      ]
+    },
+    {
+      "id": "m_heidi",
+      "name": "Heidi",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [
+        "Closing"
+      ],
+      "availability": [],
+      "skill_ids": [
+        "skill_8"
+      ]
+    },
+    {
+      "id": "m_john",
+      "name": "John",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [],
+      "availability": [],
+      "skill_ids": [
+        "skill_7"
+      ]
+    },
+    {
+      "id": "m_nabil",
+      "name": "Nabil",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [],
+      "availability": [],
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "m_barry",
+      "name": "Barry",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [],
+      "availability": [],
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "m_victoria",
+      "name": "Victoria",
+      "title": "Produce Clerk",
+      "role_tags": [
+        "Produce Clerk"
+      ],
+      "fixed_commitments_minutes": 0,
+      "default_tasks": [],
+      "max_daily_minutes": 480,
+      "max_weekly_minutes": 2400,
+      "shift_class_preference": [],
+      "availability": [],
+      "skill_ids": [
+        "skill_3"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_truck",
+      "code": "TRK",
+      "name": "Truck Unload & Sort",
+      "description": "Unload overnight delivery truck and sort produce for stocking.",
+      "earliest_start": "04:00",
+      "due_by": "07:00",
+      "estimated_duration": 180,
+      "task_type": "standard",
+      "priority_weight": 5,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "is_must_run": true,
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_14",
+        "skill_9"
+      ]
+    },
+    {
+      "id": "task_pull_backstock",
+      "code": "PULL",
+      "name": "Pull Backstock Carts to Floor",
+      "description": "Pull all temperature-safe backstock carts to the sales floor.",
+      "earliest_start": "06:00",
+      "due_by": "07:00",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 9,
+      "allow_multi_assign": true,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_4"
+      ]
+    },
+    {
+      "id": "task_inventory",
+      "code": "INV",
+      "name": "Monthly Full Produce Inventory",
+      "description": "Conduct a full inventory count of all produce items in the department.",
+      "earliest_start": "08:00",
+      "due_by": "EOD",
+      "estimated_duration": 180,
+      "task_type": "project",
+      "priority_weight": 1,
+      "allow_multi_assign": false,
+      "recurrence_type": "monthly",
+      "recurrence_detail": "Last Sunday",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_4",
+        "skill_11"
+      ]
+    },
+    {
+      "id": "task_ad_change",
+      "code": "AD",
+      "name": "Weekly Ad/First Impression Change",
+      "description": "Update all ad signage and refresh first impression displays.",
+      "earliest_start": "06:00",
+      "due_by": "09:00",
+      "estimated_duration": 60,
+      "task_type": "standard",
+      "priority_weight": 2,
+      "allow_multi_assign": false,
+      "recurrence_type": "weekly",
+      "recurrence_detail": "Wed",
+      "areaId": "area_front",
+      "skill_ids": [
+        "skill_12",
+        "skill_2"
+      ]
+    },
+    {
+      "id": "task_deep_clean",
+      "code": "DCW2",
+      "name": "Weekly Deep Clean - Salad Wall",
+      "description": "Thoroughly clean and sanitize the salad wall display.",
+      "earliest_start": "09:00",
+      "due_by": "EOD",
+      "estimated_duration": 120,
+      "task_type": "standard",
+      "priority_weight": 3,
+      "allow_multi_assign": false,
+      "recurrence_type": "weekly",
+      "recurrence_detail": "Tue",
+      "areaId": "area_wall_salad",
+      "skill_ids": [
+        "skill_6",
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_ims_audit",
+      "code": "IMSF",
+      "name": "IMS Audit Finalization",
+      "description": "Finalize weekly IMS audit and reconcile discrepancies.",
+      "earliest_start": "14:00",
+      "due_by": "EOD",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 4,
+      "allow_multi_assign": false,
+      "recurrence_type": "weekly",
+      "recurrence_detail": "Sat",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_11",
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_dob_order",
+      "code": "DOB",
+      "name": "DOB Order",
+      "description": "Place daily produce order with the distribution center.",
+      "earliest_start": "07:00",
+      "due_by": "07:55",
+      "estimated_duration": 90,
+      "task_type": "standard",
+      "priority_weight": 5,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_office",
+      "skill_ids": [
+        "skill_1"
+      ]
+    },
+    {
+      "id": "task_freshpak_order",
+      "code": "FPO",
+      "name": "Freshpak Order",
+      "description": "Place daily order for pre-packaged produce items.",
+      "earliest_start": "07:00",
+      "due_by": "07:55",
+      "estimated_duration": 20,
+      "task_type": "standard",
+      "priority_weight": 6,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_office",
+      "skill_ids": [
+        "skill_1"
+      ]
+    },
+    {
+      "id": "t_first_impressions",
+      "code": "T0",
+      "name": "First Impressions",
+      "description": "Ensure the entrance and front displays are perfectly stocked and appealing.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 10,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_front",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t4",
+      "code": "T4",
+      "name": "Banana/Citrus Table",
+      "description": "Stock and maintain the banana and citrus display table.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 45,
+      "task_type": "standard",
+      "priority_weight": 20,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t2",
+      "code": "T2",
+      "name": "Apple Bulk/Bagged Table",
+      "description": "Stock and maintain the apple bulk and bagged display table.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 90,
+      "task_type": "standard",
+      "priority_weight": 30,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t1",
+      "code": "T1",
+      "name": "Tropical/Harvest Table",
+      "description": "Stock and maintain the tropical and harvest produce table.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 45,
+      "task_type": "standard",
+      "priority_weight": 40,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t3",
+      "code": "T3",
+      "name": "Berries/Grapes Table",
+      "description": "Stock and maintain the berries and grapes display table.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 45,
+      "task_type": "standard",
+      "priority_weight": 50,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t5",
+      "code": "T5",
+      "name": "Tomato/Pepper Table",
+      "description": "Stock and maintain the tomato and pepper display table.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 60,
+      "task_type": "standard",
+      "priority_weight": 60,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t6",
+      "code": "T6",
+      "name": "Organic Produce Table",
+      "description": "Stock and maintain the organic produce display table.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 70,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t7",
+      "code": "T7",
+      "name": "Potato/Onion Table",
+      "description": "Stock and maintain the potato and onion display table.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 60,
+      "task_type": "standard",
+      "priority_weight": 80,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "t_t8",
+      "code": "T8",
+      "name": "Dry Stock",
+      "description": "Stock and maintain dry stock items like nuts, croutons, and dried fruit.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 45,
+      "task_type": "standard",
+      "priority_weight": 90,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "task_w1",
+      "code": "W1",
+      "name": "Freshpak Wall Service",
+      "description": "Service and replenish the fresh-packed produce wall.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 90,
+      "task_type": "standard",
+      "priority_weight": 100,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_wall_freshpak",
+      "skill_ids": [
+        "skill_5"
+      ]
+    },
+    {
+      "id": "task_w2",
+      "code": "W2",
+      "name": "Salad/Juice Wall Service",
+      "description": "Service and replenish the salad and juice wall.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 240,
+      "task_type": "standard",
+      "priority_weight": 110,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_wall_salad",
+      "skill_ids": [
+        "skill_6"
+      ]
+    },
+    {
+      "id": "task_w3",
+      "code": "W3",
+      "name": "Mirror Wall Service",
+      "description": "Service and replenish the mirror wall displays.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 90,
+      "task_type": "standard",
+      "priority_weight": 120,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_wall_mirror",
+      "skill_ids": [
+        "skill_7"
+      ]
+    },
+    {
+      "id": "task_w4",
+      "code": "W4",
+      "name": "Wet Rack/Herb Service",
+      "description": "Service and replenish the wet rack and herb displays.",
+      "earliest_start": "07:00",
+      "due_by": "09:00",
+      "estimated_duration": 180,
+      "task_type": "standard",
+      "priority_weight": 130,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_wall_wet",
+      "skill_ids": [
+        "skill_8"
+      ]
+    },
+    {
+      "id": "task_mid_morning_refill",
+      "code": "MMR",
+      "name": "Mid-Morning Refill (High Turnover)",
+      "description": "Perform a mid-morning refill of high-turnover items.",
+      "earliest_start": "10:30",
+      "due_by": "11:00",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 200,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_front",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "task_floor_check",
+      "code": "FLOOR",
+      "name": "Post-Set Floor Check & Spot Clean",
+      "description": "Perform a floor check after initial setup and conduct spot cleaning.",
+      "earliest_start": "11:00",
+      "due_by": "11:30",
+      "estimated_duration": 15,
+      "task_type": "standard",
+      "priority_weight": 210,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_floor",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_bag_roll_restock",
+      "code": "BAGS",
+      "name": "Produce Bag Roll Restock",
+      "description": "Restock produce bag rolls at all stations.",
+      "earliest_start": "11:00",
+      "due_by": "11:30",
+      "estimated_duration": 15,
+      "task_type": "standard",
+      "priority_weight": 220,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_floor",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_markdowns",
+      "code": "MD",
+      "name": "Markdowns",
+      "description": "Identify and markdown items nearing expiration or quality decline.",
+      "earliest_start": "15:00",
+      "due_by": "EOD",
+      "estimated_duration": 60,
+      "task_type": "standard",
+      "priority_weight": 300,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_returns",
+      "code": "RET",
+      "name": "Shop Back Customer Returns",
+      "description": "Process items returned by customers at the service desk.",
+      "earliest_start": "15:00",
+      "due_by": "EOD",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 315,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_putbacks",
+      "code": "PUT",
+      "name": "Customer Putbacks",
+      "description": "Collect and restock items left by customers around the store.",
+      "earliest_start": "15:00",
+      "due_by": "EOD",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 316,
+      "allow_multi_assign": true,
+      "recurrence_type": "daily",
+      "areaId": "area_floor",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_throwaways",
+      "code": "WASTE",
+      "name": "Throwaways",
+      "description": "Process and dispose of unsaleable produce.",
+      "earliest_start": "15:00",
+      "due_by": "EOD",
+      "estimated_duration": 45,
+      "task_type": "standard",
+      "priority_weight": 310,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_flashfood",
+      "code": "FFB",
+      "name": "FlashFood Bags",
+      "description": "Prepare FlashFood bags for discounted produce.",
+      "earliest_start": "15:00",
+      "due_by": "EOD",
+      "estimated_duration": 30,
+      "task_type": "standard",
+      "priority_weight": 320,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_ims_scan",
+      "code": "IMS",
+      "name": "IMS Audits",
+      "description": "Perform daily IMS inventory scans and audits.",
+      "earliest_start": "15:00",
+      "due_by": "EOD",
+      "estimated_duration": 60,
+      "task_type": "standard",
+      "priority_weight": 330,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_11",
+        "skill_3"
+      ]
+    },
+    {
+      "id": "task_breakdown_pallets",
+      "code": "PAL",
+      "name": "Breakdown Pallets in Cooler",
+      "description": "Fully breakdown and combine previous day pallets in cooler.",
+      "earliest_start": "15:00",
+      "due_by": "EOD",
+      "estimated_duration": 60,
+      "task_type": "standard",
+      "priority_weight": 340,
+      "allow_multi_assign": false,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_4",
+        "skill_15"
+      ]
+    },
+    {
+      "id": "task_tags",
+      "code": "TAG",
+      "name": "Pull Expired Sale Tags",
+      "description": "On Saturday nights, pull all expired sale tags and signs.",
+      "earliest_start": "20:00",
+      "due_by": "EOD",
+      "estimated_duration": 45,
+      "task_type": "standard",
+      "priority_weight": 350,
+      "allow_multi_assign": true,
+      "recurrence_type": "weekly",
+      "recurrence_detail": "Sat",
+      "areaId": "area_floor",
+      "skill_ids": [
+        "skill_12"
+      ]
+    },
+    {
+      "id": "task_process_organics",
+      "code": "ORG",
+      "name": "Process Organics",
+      "description": "Process and stock organic produce deliveries.",
+      "earliest_start": "Continuous",
+      "due_by": "Continuous",
+      "estimated_duration": 30,
+      "task_type": "upkeep",
+      "priority_weight": 500,
+      "allow_multi_assign": true,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_4"
+      ]
+    },
+    {
+      "id": "upkeep_sweep",
+      "code": "SWEEP",
+      "name": "Sweep & Mop Floor",
+      "description": "Maintain cleanliness of the produce floor.",
+      "earliest_start": "Continuous",
+      "due_by": "Continuous",
+      "estimated_duration": 30,
+      "task_type": "upkeep",
+      "priority_weight": 510,
+      "allow_multi_assign": true,
+      "recurrence_type": "daily",
+      "areaId": "area_floor",
+      "skill_ids": [
+        "skill_3"
+      ]
+    },
+    {
+      "id": "upkeep_cardboard",
+      "code": "CRD",
+      "name": "Clear Empty Cardboard",
+      "description": "Clear empty cardboard from tables and take to bailer.",
+      "earliest_start": "Continuous",
+      "due_by": "Continuous",
+      "estimated_duration": 30,
+      "task_type": "upkeep",
+      "priority_weight": 515,
+      "allow_multi_assign": true,
+      "recurrence_type": "daily",
+      "areaId": "area_floor",
+      "skill_ids": [
+        "skill_15"
+      ]
+    },
+    {
+      "id": "upkeep_facing",
+      "code": "FACE",
+      "name": "Facing Displays",
+      "description": "Continuously face and rotate produce on displays.",
+      "earliest_start": "Continuous",
+      "due_by": "Continuous",
+      "estimated_duration": 30,
+      "task_type": "upkeep",
+      "priority_weight": 520,
+      "allow_multi_assign": true,
+      "recurrence_type": "daily",
+      "areaId": "area_dry_table",
+      "skill_ids": [
+        "skill_2"
+      ]
+    },
+    {
+      "id": "upkeep_backroom",
+      "code": "BCLR",
+      "name": "Backroom Cleanliness",
+      "description": "Maintain organization and cleanliness in the produce backroom.",
+      "earliest_start": "Continuous",
+      "due_by": "Continuous",
+      "estimated_duration": 30,
+      "task_type": "upkeep",
+      "priority_weight": 530,
+      "allow_multi_assign": true,
+      "recurrence_type": "daily",
+      "areaId": "area_backroom",
+      "skill_ids": [
+        "skill_4"
+      ]
+    }
+  ],
+  "explicit_rules": [
+    {
+      "id": "d527ab17-4202-4ed6-92b7-d2199f2f4f1e",
+      "task_id": "task_truck",
+      "primary_selector": {
+        "id": "454f7ebc-7f7c-4c40-be50-73bdc43359ef",
+        "mode": "member",
+        "value": "m_soloman"
+      },
+      "fallback_selectors": [
+        {
+          "id": "c0b287f5-9fda-4b0c-ae75-70f6f6e0856e",
+          "mode": "member",
+          "value": "m_marlon"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for Truck Unload & Sort (Primary/Fallback Rule)."
+    },
+    {
+      "id": "519479b3-f8aa-42a6-be27-b303db6c1d26",
+      "task_id": "task_pull_backstock",
+      "primary_selector": {
+        "id": "d260a512-47f1-4f0c-bc0c-810817143886",
+        "mode": "member",
+        "value": "m_soloman"
+      },
+      "fallback_selectors": [],
+      "prefer_shift_class": "Overnight",
+      "reason_template": "Assigned to {{memberName}} as a primary overnight duty."
+    },
+    {
+      "id": "bf12af5a-61dd-4d67-86b0-74ec4de8145e",
+      "task_id": "task_breakdown_pallets",
+      "primary_selector": {
+        "id": "8bc5b5b4-34e7-4965-b8b5-39dc7b0d5051",
+        "mode": "member",
+        "value": "m_soloman"
+      },
+      "fallback_selectors": [],
+      "prefer_shift_class": "Overnight",
+      "reason_template": "Assigned to {{memberName}} as a primary overnight duty."
+    },
+    {
+      "id": "d53969fb-c109-4c98-b66a-88bc614fb75b",
+      "task_id": "task_tags",
+      "primary_selector": {
+        "id": "c4c773f0-93dc-4523-a40e-441d2e7f9bb5",
+        "mode": "member",
+        "value": "m_soloman"
+      },
+      "fallback_selectors": [],
+      "prefer_shift_class": "Overnight",
+      "reason_template": "Assigned to {{memberName}} as a primary Saturday overnight duty."
+    },
+    {
+      "id": "a5b86a37-c10c-4a16-8ca4-846e2f18dfc5",
+      "task_id": "task_dob_order",
+      "primary_selector": {
+        "id": "44865ddc-e3a6-4d19-b888-5928d1ebea3a",
+        "mode": "member",
+        "value": "m_marlon"
+      },
+      "fallback_selectors": [
+        {
+          "id": "9d513232-2f9e-4b5f-93ab-3ccb41add091",
+          "mode": "member",
+          "value": "m_james"
+        },
+        {
+          "id": "c8f3cc42-0a45-44cf-97e1-b90a9efdd91f",
+          "mode": "member",
+          "value": "m_deb"
+        },
+        {
+          "id": "85432e34-0976-407c-940c-34168eca62fd",
+          "mode": "member",
+          "value": "m_kenneth"
+        },
+        {
+          "id": "2a4f9b66-9bda-4bae-91cf-50199ec564b2",
+          "mode": "member",
+          "value": "m_william"
+        }
+      ],
+      "exclude_day": [
+        "Wed"
+      ],
+      "reason_template": "Assigned to {{memberName}} for DOB Order (Primary/Fallback Rule)."
+    },
+    {
+      "id": "92f14a51-a54a-4931-905f-b1b236d0892f",
+      "task_id": "task_freshpak_order",
+      "primary_selector": {
+        "id": "43cd09c3-ecc2-4881-8695-1b4ded41f967",
+        "mode": "member",
+        "value": "m_sandra"
+      },
+      "fallback_selectors": [
+        {
+          "id": "037a1092-5adf-4409-a4cc-88b45121ebdd",
+          "mode": "member",
+          "value": "m_deb"
+        },
+        {
+          "id": "5a5fd4af-f36b-42ce-867d-eebe8f65f10b",
+          "mode": "member",
+          "value": "m_beth"
+        },
+        {
+          "id": "15c6cc9f-59bf-4e3c-b6b6-4d50d2b0d809",
+          "mode": "member",
+          "value": "m_marlon"
+        },
+        {
+          "id": "ec036945-9b79-42db-9ac0-52decf70c74f",
+          "mode": "member",
+          "value": "m_james"
+        }
+      ],
+      "exclude_day": [
+        "Tue"
+      ],
+      "reason_template": "Assigned to {{memberName}} for Freshpak Order (Primary/Fallback Rule)."
+    },
+    {
+      "id": "057c00f4-ae67-4848-be02-c4db90316963",
+      "task_id": "task_w1",
+      "primary_selector": {
+        "id": "90402a72-49c0-4076-935a-f89ed7c73e9b",
+        "mode": "member",
+        "value": "m_sandra"
+      },
+      "fallback_selectors": [
+        {
+          "id": "13b75f4a-d324-43f6-b7f7-5a80a8dfe807",
+          "mode": "member",
+          "value": "m_heidi"
+        },
+        {
+          "id": "d9ed28c7-853c-4838-9d46-1f4b51347aae",
+          "mode": "member",
+          "value": "m_james"
+        },
+        {
+          "id": "9bd85e28-4299-43e4-9396-a1c82953466b",
+          "mode": "member",
+          "value": "m_beth"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for W1 Freshpak Wall Service (Primary/Fallback Rule)."
+    },
+    {
+      "id": "2f7033bb-3572-429d-9546-2a0267448f81",
+      "task_id": "task_w2",
+      "primary_selector": {
+        "id": "954f0bb3-c639-4662-954d-9727b2bbfab6",
+        "mode": "member",
+        "value": "m_deb"
+      },
+      "fallback_selectors": [
+        {
+          "id": "fe28e9df-2d31-48ba-bb94-514dc4be83f4",
+          "mode": "member",
+          "value": "m_sandra"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for W2 Salad/Juice Wall Service (Primary/Fallback Rule)."
+    },
+    {
+      "id": "7482378d-80e3-4955-b66b-ffc00000cffb",
+      "task_id": "task_w3",
+      "primary_selector": {
+        "id": "4ec70702-cd52-4d72-bf92-5141845107ae",
+        "mode": "member",
+        "value": "m_john"
+      },
+      "fallback_selectors": [
+        {
+          "id": "3f033ca4-b915-41fe-811b-5239a2ced02b",
+          "mode": "member",
+          "value": "m_william"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for W3 Mirror Wall Service (Primary/Fallback Rule)."
+    },
+    {
+      "id": "9c941328-2cc6-4630-949b-d75500a19611",
+      "task_id": "task_w4",
+      "primary_selector": {
+        "id": "b3bf8f1d-c41b-48c2-88a9-7b369f07ad75",
+        "mode": "member",
+        "value": "m_heidi"
+      },
+      "fallback_selectors": [
+        {
+          "id": "754165a9-12c8-4cdd-b9b5-a23f555c2b57",
+          "mode": "member",
+          "value": "m_john"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for W4 Wet Rack/Herb Service (Primary/Fallback Rule)."
+    },
+    {
+      "id": "82075de8-83ac-4439-a5a2-b846219fc256",
+      "task_id": "task_markdowns",
+      "primary_selector": {
+        "id": "91e1ce26-7f60-4f6a-a752-b2c901ecbd55",
+        "mode": "role_tag",
+        "value": "Quality Checks"
+      },
+      "fallback_selectors": [
+        {
+          "id": "c742cbc2-cb63-43ab-b948-d5d42ff04f20",
+          "mode": "member",
+          "value": "m_sandra"
+        },
+        {
+          "id": "0e2cc33a-7b07-4500-8135-b0f150812984",
+          "mode": "member",
+          "value": "m_deb"
+        },
+        {
+          "id": "7e476994-5fa1-4105-b7cf-b75f18e80eec",
+          "mode": "member",
+          "value": "m_beth"
+        },
+        {
+          "id": "8170a607-673f-45be-a8da-03242dbb9741",
+          "mode": "member",
+          "value": "m_william"
+        },
+        {
+          "id": "450733bf-6e69-4d66-bb28-02ba239e32b1",
+          "mode": "member",
+          "value": "m_nabil"
+        },
+        {
+          "id": "966968f1-cf6f-4d8c-b89b-f4a0cadabe1c",
+          "mode": "member",
+          "value": "m_james"
+        },
+        {
+          "id": "5edfb04c-83fd-4d5d-b550-bdfc2473f771",
+          "mode": "member",
+          "value": "m_barry"
+        },
+        {
+          "id": "4cd133fb-dc34-467e-93ff-6e8e97981144",
+          "mode": "member",
+          "value": "m_victoria"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for Markdowns (Quality Checks Rule)."
+    },
+    {
+      "id": "d8a30759-2e93-4ebb-a9f9-973be5e705e2",
+      "task_id": "task_throwaways",
+      "primary_selector": {
+        "id": "0fe2dd23-ae54-4136-bbdc-d22bd772ae29",
+        "mode": "role_tag",
+        "value": "Quality Checks"
+      },
+      "fallback_selectors": [
+        {
+          "id": "4a50581e-b12e-4d3e-89bc-378bd34c0cbc",
+          "mode": "member",
+          "value": "m_sandra"
+        },
+        {
+          "id": "34792a26-da33-4117-9ac5-e390e03ffa87",
+          "mode": "member",
+          "value": "m_deb"
+        },
+        {
+          "id": "f8a8311c-f890-480e-a8ec-88bd66b2c720",
+          "mode": "member",
+          "value": "m_beth"
+        },
+        {
+          "id": "c50be8d1-e132-4f96-b79b-e6efafb48378",
+          "mode": "member",
+          "value": "m_william"
+        },
+        {
+          "id": "27ed4b86-986f-42b3-a32f-a534107ead28",
+          "mode": "member",
+          "value": "m_nabil"
+        },
+        {
+          "id": "968b6d5a-3ba8-4068-900b-d3cd7f28efbc",
+          "mode": "member",
+          "value": "m_james"
+        },
+        {
+          "id": "a3368a94-73ad-46c6-9d8c-466e41c75bf4",
+          "mode": "member",
+          "value": "m_barry"
+        },
+        {
+          "id": "1778ee54-edb0-4125-92de-508bca03bc50",
+          "mode": "member",
+          "value": "m_victoria"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for Throwaways (Quality Checks Rule)."
+    },
+    {
+      "id": "bb6c0e1e-eab7-40cb-85dc-befc3aa319b5",
+      "task_id": "task_flashfood",
+      "primary_selector": {
+        "id": "bb0b7f9e-3bae-44d9-8310-b13063965350",
+        "mode": "role_tag",
+        "value": "Quality Checks"
+      },
+      "fallback_selectors": [
+        {
+          "id": "996256b9-e633-4eeb-b158-4588366af5ad",
+          "mode": "member",
+          "value": "m_sandra"
+        },
+        {
+          "id": "4f057f33-c872-4930-a9ba-d1b8d92a7001",
+          "mode": "member",
+          "value": "m_deb"
+        },
+        {
+          "id": "b26d61c0-31cb-4158-a100-9750bc969b9a",
+          "mode": "member",
+          "value": "m_beth"
+        },
+        {
+          "id": "506ca4bd-0cf7-4645-9d81-a481ef58233a",
+          "mode": "member",
+          "value": "m_william"
+        },
+        {
+          "id": "c5860693-6fde-463b-b13f-110f27ca9787",
+          "mode": "member",
+          "value": "m_nabil"
+        },
+        {
+          "id": "5ea88632-e674-4673-bd27-479f96b7a7c5",
+          "mode": "member",
+          "value": "m_james"
+        },
+        {
+          "id": "a8be4666-13f2-4182-a798-0d9637c5c706",
+          "mode": "member",
+          "value": "m_barry"
+        },
+        {
+          "id": "382f28c3-cfe1-4044-a7e3-361900869fdb",
+          "mode": "member",
+          "value": "m_victoria"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for FlashFood Bags (Quality Checks Rule)."
+    },
+    {
+      "id": "8342e8a4-4f4c-4301-8939-586288feb409",
+      "task_id": "task_ims_scan",
+      "primary_selector": {
+        "id": "26153f1e-5cca-49fb-ba74-8cecb1972ac5",
+        "mode": "role_tag",
+        "value": "Quality Checks"
+      },
+      "fallback_selectors": [
+        {
+          "id": "b010f9a3-51e5-4c4c-b2b9-1e41ddb27d55",
+          "mode": "member",
+          "value": "m_sandra"
+        },
+        {
+          "id": "202335cb-a9fd-495c-bfb3-23cf3e6cc95d",
+          "mode": "member",
+          "value": "m_deb"
+        },
+        {
+          "id": "a87f5c4e-43c5-454d-9514-154165f0293b",
+          "mode": "member",
+          "value": "m_beth"
+        },
+        {
+          "id": "8eb0f394-15a3-4f29-a947-216b7339f6df",
+          "mode": "member",
+          "value": "m_william"
+        },
+        {
+          "id": "fc596417-1d4d-407d-8930-651600bf1737",
+          "mode": "member",
+          "value": "m_nabil"
+        },
+        {
+          "id": "404e874b-5e20-4ee6-b6eb-aa7ab4f91a80",
+          "mode": "member",
+          "value": "m_james"
+        },
+        {
+          "id": "e7df8a20-d7a6-43b9-aa87-5565a39cd020",
+          "mode": "member",
+          "value": "m_barry"
+        },
+        {
+          "id": "25d4dff1-91fc-49fb-9d55-41446d9b57bc",
+          "mode": "member",
+          "value": "m_victoria"
+        }
+      ],
+      "reason_template": "Assigned to {{memberName}} for IMS Audits (Quality Checks Rule)."
+    }
+  ],
+  "weekly_schedule": [
+    {
+      "id": "00baca5f-aa32-4957-9a2f-bcda3b97956e",
+      "date": "2025-10-28",
+      "shifts": [
+        {
+          "id": "b0cb2f16-018f-47f8-9122-bb7be17c4afb",
+          "memberId": "m_soloman",
+          "start": "00:00",
+          "end": "08:00",
+          "shift_class": "Overnight"
+        },
+        {
+          "id": "3837b136-3eef-4039-a303-ef6f634a01e7",
+          "memberId": "m_marlon",
+          "start": "01:00",
+          "end": "09:00",
+          "shift_class": "Overnight"
+        },
+        {
+          "id": "04f5ef43-0ad5-41cb-8da9-c7748f58a739",
+          "memberId": "m_sandra",
+          "start": "06:00",
+          "end": "14:00",
+          "shift_class": "Opening"
+        },
+        {
+          "id": "d84bad0b-3af0-4ade-ae9f-8a99cdde81c0",
+          "memberId": "m_deb",
+          "start": "14:00",
+          "end": "22:00",
+          "shift_class": "Closing"
+        },
+        {
+          "id": "e0505ff2-24ea-4281-9fe5-0c8028eea6d6",
+          "memberId": "m_heidi",
+          "start": "14:00",
+          "end": "22:00",
+          "shift_class": "Closing"
+        },
+        {
+          "id": "dee073a8-974d-423b-8dbd-be875729e39e",
+          "memberId": "m_john",
+          "start": "08:00",
+          "end": "16:00",
+          "shift_class": "Mid-Shift"
+        },
+        {
+          "id": "97ff5882-993f-4b5e-b8da-1dc75a74f9d7",
+          "memberId": "m_james",
+          "start": "09:00",
+          "end": "17:00",
+          "shift_class": "Mid-Shift"
+        },
+        {
+          "id": "9ab24f2a-1700-434c-83bd-0a5965f631b2",
+          "memberId": "m_william",
+          "start": "08:00",
+          "end": "16:00",
+          "shift_class": "Mid-Shift"
+        },
+        {
+          "id": "aa0d2775-d6ec-4a27-861b-81cd667b77e0",
+          "memberId": "m_nabil",
+          "start": "15:00",
+          "end": "22:00",
+          "shift_class": "Closing"
+        },
+        {
+          "id": "9d2e0f3c-d288-4827-80b4-76072dc62b31",
+          "memberId": "m_barry",
+          "start": "15:00",
+          "end": "22:00",
+          "shift_class": "Closing"
+        },
+        {
+          "id": "5b8d786a-82b5-4fb6-8941-3d4c7127eb96",
+          "memberId": "m_victoria",
+          "start": "15:00",
+          "end": "22:00",
+          "shift_class": "Closing"
+        },
+        {
+          "id": "cf93cb60-96b0-4ba3-a6f2-000a28717319",
+          "memberId": "m_alice",
+          "start": "06:00",
+          "end": "14:30",
+          "shift_class": "Opening"
+        },
+        {
+          "id": "eea5c492-070c-4a95-9504-875b1d9db13f",
+          "memberId": "m_bob",
+          "start": "09:00",
+          "end": "17:30",
+          "shift_class": "Mid-Shift"
+        },
+        {
+          "id": "d27675f1-6460-4422-8b86-40c1bee3ebe5",
+          "memberId": "m_charlie",
+          "start": "07:00",
+          "end": "15:30",
+          "shift_class": "Opening"
+        }
+      ],
+      "flags": {
+        "source": "sample_data"
+      }
+    }
+  ],
+  "assignments": [
+    {
+      "id": "c71b2cd5-5d58-4499-aa26-a45ae19e2e2d",
+      "taskId": "task_pull_backstock",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "06:00",
+      "endTime": "06:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance (coverage).",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "7cd4fa15-6c60-4f67-b261-33a45036bfa8",
+      "taskId": "t_t1",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "07:45",
+      "duration": 45,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "3eb9cd6d-d629-49a2-a622-7652592d8287",
+      "taskId": "t_t3",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "07:45",
+      "duration": 45,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "4b189bf7-a5a9-4c20-bc0b-5a79abca01b7",
+      "taskId": "t_t4",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "07:45",
+      "duration": 45,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "b1ca645a-8836-4862-914e-a09b4b6dc72f",
+      "taskId": "t_t6",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "07:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "b65035d0-5c71-400a-8a64-7d9f6cda0aa6",
+      "taskId": "t_t8",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "07:45",
+      "duration": 45,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "e7aac327-0400-4d07-a84c-03b3b6f50488",
+      "taskId": "task_mid_morning_refill",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "10:30",
+      "endTime": "11:00",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "a9610349-57b6-4ac7-8f6b-1b2ba2a57ef3",
+      "taskId": "task_ims_scan",
+      "memberId": "m_alice",
+      "date": "2025-10-28",
+      "startTime": "15:00",
+      "endTime": "16:00",
+      "duration": 60,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "01c84fc8-1f23-407f-8ab2-1cf3ca9265f6",
+      "taskId": "upkeep_sweep",
+      "memberId": "m_barry",
+      "date": "2025-10-28",
+      "startTime": "Continuous",
+      "endTime": "00:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance (coverage).",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "9aaa84d9-3574-4ece-9781-0620c4ba116d",
+      "taskId": "task_floor_check",
+      "memberId": "m_barry",
+      "date": "2025-10-28",
+      "startTime": "11:00",
+      "endTime": "11:15",
+      "duration": 15,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "62992f8b-f988-4a59-b6d8-35e2572fdddb",
+      "taskId": "task_returns",
+      "memberId": "m_barry",
+      "date": "2025-10-28",
+      "startTime": "15:00",
+      "endTime": "15:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "57baf0d9-3e4a-49f5-8fd9-b6e57f8baab3",
+      "taskId": "upkeep_backroom",
+      "memberId": "m_bob",
+      "date": "2025-10-28",
+      "startTime": "Continuous",
+      "endTime": "00:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance (coverage).",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "447cade7-62c6-4bb3-ae5d-d4158a27468b",
+      "taskId": "upkeep_facing",
+      "memberId": "m_bob",
+      "date": "2025-10-28",
+      "startTime": "Continuous",
+      "endTime": "00:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance (coverage).",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "c2069c7c-c138-48d2-b997-040c906cc10d",
+      "taskId": "task_process_organics",
+      "memberId": "m_bob",
+      "date": "2025-10-28",
+      "startTime": "Continuous",
+      "endTime": "00:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance (coverage).",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "4e95ce32-6131-4ba8-8f1e-1becfbbba41e",
+      "taskId": "t_first_impressions",
+      "memberId": "m_bob",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "07:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "8899e8d3-ccf5-46b8-ada3-ae78d2737038",
+      "taskId": "t_t2",
+      "memberId": "m_bob",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "08:30",
+      "duration": 90,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "18b9b137-9a16-4ae0-908f-653978b6602e",
+      "taskId": "t_t5",
+      "memberId": "m_bob",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "08:00",
+      "duration": 60,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "3798cc5e-5657-451e-9c9a-1658dac160ae",
+      "taskId": "t_t7",
+      "memberId": "m_bob",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "08:00",
+      "duration": 60,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "7f2c8e51-a7e0-4157-8635-af8f83a8fe08",
+      "taskId": "task_w4",
+      "memberId": "m_charlie",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "10:00",
+      "duration": 180,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "b07e5864-1831-4e86-a070-3acae3d79e30",
+      "taskId": "task_deep_clean",
+      "memberId": "m_charlie",
+      "date": "2025-10-28",
+      "startTime": "09:00",
+      "endTime": "11:00",
+      "duration": 120,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "06f111ec-168e-4dc5-b183-b9adf31fab97",
+      "taskId": "task_w2",
+      "memberId": "m_deb",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "11:00",
+      "duration": 240,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "f0c6976e-2f99-4a13-b96c-ccac358dc006",
+      "taskId": "task_w1",
+      "memberId": "m_james",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "08:30",
+      "duration": 90,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "0d9f4e7e-44e6-4f90-b8dd-c46e911ddd8a",
+      "taskId": "task_dob_order",
+      "memberId": "m_marlon",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "08:30",
+      "duration": 90,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "c0376a52-6655-47da-97b2-13bbf634fb09",
+      "taskId": "task_bag_roll_restock",
+      "memberId": "m_nabil",
+      "date": "2025-10-28",
+      "startTime": "11:00",
+      "endTime": "11:15",
+      "duration": 15,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "5b070807-3234-48b0-8cb5-8f7e09807293",
+      "taskId": "task_putbacks",
+      "memberId": "m_nabil",
+      "date": "2025-10-28",
+      "startTime": "15:00",
+      "endTime": "15:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance (coverage).",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "b572d647-c8cb-4c9e-9f4f-4f4e937a3038",
+      "taskId": "task_markdowns",
+      "memberId": "m_nabil",
+      "date": "2025-10-28",
+      "startTime": "15:00",
+      "endTime": "16:00",
+      "duration": 60,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "7944b4c7-ae4e-411f-a23a-0e1e9ba56a4c",
+      "taskId": "upkeep_cardboard",
+      "memberId": "m_soloman",
+      "date": "2025-10-28",
+      "startTime": "Continuous",
+      "endTime": "00:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance (coverage).",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "39198665-ef55-45cf-a54e-bf0a9f540937",
+      "taskId": "task_truck",
+      "memberId": "m_soloman",
+      "date": "2025-10-28",
+      "startTime": "04:00",
+      "endTime": "07:00",
+      "duration": 180,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "2bf72e2c-d267-47b7-b26c-664ba866c1d2",
+      "taskId": "task_breakdown_pallets",
+      "memberId": "m_soloman",
+      "date": "2025-10-28",
+      "startTime": "15:00",
+      "endTime": "16:00",
+      "duration": 60,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "35998c88-a7df-4007-b765-6ef89a02be3a",
+      "taskId": "task_flashfood",
+      "memberId": "m_victoria",
+      "date": "2025-10-28",
+      "startTime": "15:00",
+      "endTime": "15:30",
+      "duration": 30,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "18b2050b-0b77-41da-a0ff-b4ca0b18296c",
+      "taskId": "task_throwaways",
+      "memberId": "m_victoria",
+      "date": "2025-10-28",
+      "startTime": "15:00",
+      "endTime": "15:45",
+      "duration": 45,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    },
+    {
+      "id": "752df860-4287-4954-9cff-d259afe04bad",
+      "taskId": "task_w3",
+      "memberId": "m_william",
+      "date": "2025-10-28",
+      "startTime": "07:00",
+      "endTime": "08:30",
+      "duration": 90,
+      "reason": "Assigned by skill and workload balance.",
+      "locked": false,
+      "status": "assigned"
+    }
+  ],
+  "templates": [
+    {
+      "id": "default-template",
+      "name": "Default Daily Worklist",
+      "content": "\n# Daily Worklist for {{date}}\n\n## Store: {{store}}\n## Department: {{department}}\n## Floor SLA Time (Total Workload Goal): {{floorSlaTime}} minutes\n\n### Important Notes:\n*   Please prioritize tasks by their assigned order.\n*   Communicate any issues or delays to management.\n*   Ensure all displays are neat and fully stocked.\n\n---\n\n## Assignments:\n\n| Member | Task | Duration | Start | End | Status | Reason |\n|---|---|---|---|---|---|---|\n{{#each assignmentsByMember}}\n| **{{this.memberName}}** | | | | | | |\n{{#each this.tasks}}\n| | {{this.taskName}} | {{this.duration}} mins | {{this.startTime}} | {{this.endTime}} | {{this.status}} | {{this.reason}} |\n{{/each}}\n| | **Total Assigned Workload:** | **{{this.totalDuration}} mins** | | | | |\n{{#if (gt this.capacity 0)}}\n| | **Available Capacity:** | **{{minus this.capacity this.totalDuration}} mins** | | | | |\n{{/if}}\n{{/each}}\n\n---\n\n{{#if unassignedTasks.length}}\n### Unassigned Tasks:\nThe following tasks could not be assigned:\n{{#each unassignedTasks}}\n*   {{this.taskName}} ({{this.duration}} mins) - Due by: {{this.dueBy}}\n{{/each}}\n---\n{{/if}}\n\n{{#if overCapacityMembers.length}}\n### Over-Capacity Members:\nThe following members are assigned more tasks than their available shift time:\n{{#each overCapacityMembers}}\n*   {{this.name}}: {{this.overCapacity}} mins over capacity\n{{/each}}\n---\n{{/if}}\n\nCheck-in: _______________________\nCheck-out: ______________________\nSupervisor Sign: ________________\n"
+    }
+  ],
+  "manager_settings": [
+    {
+      "id": "a5b5112c-79df-403d-9f05-544d3566a90a",
+      "floorSlaTime": 480,
+      "tieBreakSeed": 12345,
+      "overCapacityThreshold": 30,
+      "assignmentStartTime": "07:00",
+      "plannerSeed": 42,
+      "defaultPlanningPeriod": 7,
+      "defaultSlotDuration": 30
+    }
+  ],
+  "areas": [
+    {
+      "id": "area_front",
+      "name": "Front Displays",
+      "position": 1
+    },
+    {
+      "id": "area_dry_table",
+      "name": "Dry Tables",
+      "position": 2
+    },
+    {
+      "id": "area_wall_freshpak",
+      "name": "Freshpak Wall",
+      "position": 3
+    },
+    {
+      "id": "area_wall_salad",
+      "name": "Salad Wall",
+      "position": 4
+    },
+    {
+      "id": "area_wall_mirror",
+      "name": "Mirror Wall",
+      "position": 5
+    },
+    {
+      "id": "area_wall_wet",
+      "name": "Wet Rack/Herbs",
+      "position": 6
+    },
+    {
+      "id": "area_floor",
+      "name": "Sales Floor",
+      "position": 7
+    },
+    {
+      "id": "area_backroom",
+      "name": "Backroom",
+      "position": 8
+    },
+    {
+      "id": "area_office",
+      "name": "Office",
+      "position": 9
+    }
+  ],
+  "order_sets": [
+    {
+      "id": "default-order-set",
+      "name": "Default Daily Tasks",
+      "scope": "global",
+      "created_at": "2025-10-29T01:54:05.687Z"
+    }
+  ],
+  "order_set_items": [
+    {
+      "id": "413c18d5-5067-47f4-a653-e5f6297fe7eb",
+      "order_set_id": "default-order-set",
+      "task_id": "t_first_impressions",
+      "position": 10
+    },
+    {
+      "id": "10865e12-e455-466c-ad42-5c6faf400c64",
+      "order_set_id": "default-order-set",
+      "task_id": "t_t4",
+      "position": 20
+    },
+    {
+      "id": "e33cf423-a8bb-4045-bed8-db2d82119a6f",
+      "order_set_id": "default-order-set",
+      "task_id": "t_t2",
+      "position": 30
+    },
+    {
+      "id": "d36cb389-0a67-4862-bbc8-6695c2483517",
+      "order_set_id": "default-order-set",
+      "task_id": "t_t1",
+      "position": 40
+    },
+    {
+      "id": "c4c6aaec-2a61-4058-9d4b-dd53cc7b9946",
+      "order_set_id": "default-order-set",
+      "task_id": "t_t3",
+      "position": 50
+    },
+    {
+      "id": "2bd29a71-8b6e-4be6-90ad-b1bc56df4272",
+      "order_set_id": "default-order-set",
+      "task_id": "t_t5",
+      "position": 60
+    },
+    {
+      "id": "fe608842-4824-4b36-bd8b-0c684fd7c216",
+      "order_set_id": "default-order-set",
+      "task_id": "t_t6",
+      "position": 70
+    },
+    {
+      "id": "dba0e502-21d0-4107-a936-97ed6fcb1c13",
+      "order_set_id": "default-order-set",
+      "task_id": "t_t7",
+      "position": 80
+    },
+    {
+      "id": "32019313-f195-4062-a6a3-eac4edf5baeb",
+      "order_set_id": "default-order-set",
+      "task_id": "task_w1",
+      "position": 100
+    },
+    {
+      "id": "7b53a516-2105-499f-a902-aada192567ce",
+      "order_set_id": "default-order-set",
+      "task_id": "task_w2",
+      "position": 110
+    },
+    {
+      "id": "3f84e7da-c359-4b40-84a9-34d6694c0c9c",
+      "order_set_id": "default-order-set",
+      "task_id": "task_w3",
+      "position": 120
+    },
+    {
+      "id": "08081fe5-b596-462e-a47e-e8e5067a1af4",
+      "order_set_id": "default-order-set",
+      "task_id": "task_w4",
+      "position": 130
+    },
+    {
+      "id": "ba2d78ba-5c00-403b-995f-826e4d90d0ba",
+      "order_set_id": "default-order-set",
+      "task_id": "task_truck",
+      "position": 5
+    },
+    {
+      "id": "4f6faa5a-93da-4fa2-8a8a-c24198c026d2",
+      "order_set_id": "default-order-set",
+      "task_id": "task_dob_order",
+      "position": 6
+    },
+    {
+      "id": "0ac8628c-7761-4ecb-aeb7-dd3688cc1346",
+      "order_set_id": "default-order-set",
+      "task_id": "task_freshpak_order",
+      "position": 7
+    },
+    {
+      "id": "d60f0007-db3f-492e-a7ef-2c27ca2b4cf3",
+      "order_set_id": "default-order-set",
+      "task_id": "task_floor_check",
+      "position": 210
+    },
+    {
+      "id": "78c7c8a1-0ccb-42d0-a254-cbe745ad56e4",
+      "order_set_id": "default-order-set",
+      "task_id": "task_bag_roll_restock",
+      "position": 220
+    },
+    {
+      "id": "e3c2e9c4-704c-4468-9d80-1844f6bc38fa",
+      "order_set_id": "default-order-set",
+      "task_id": "task_markdowns",
+      "position": 300
+    },
+    {
+      "id": "5706355f-3b6c-4bf3-a37a-7486436f9602",
+      "order_set_id": "default-order-set",
+      "task_id": "task_throwaways",
+      "position": 310
+    },
+    {
+      "id": "1618ff5f-b1f4-411a-8dc9-5df9f4f34cf8",
+      "order_set_id": "default-order-set",
+      "task_id": "task_flashfood",
+      "position": 320
+    },
+    {
+      "id": "eb51a865-df55-4aec-b4ff-ba9c21b219ef",
+      "order_set_id": "default-order-set",
+      "task_id": "task_ims_scan",
+      "position": 330
+    }
+  ],
+  "staffing_targets": [
+    {
+      "id": "5c226ded-3b55-4ec8-9a2a-9797b6d67a4f",
+      "day": "Mon",
+      "area_id": "area_front",
+      "start": "07:00",
+      "end": "09:00",
+      "required_count": 2
+    },
+    {
+      "id": "c37998a7-3ec5-4756-b058-c28179492dd8",
+      "day": "Mon",
+      "area_id": "area_dry_table",
+      "start": "07:00",
+      "end": "11:00",
+      "required_count": 2
+    },
+    {
+      "id": "924f23f1-cb38-4360-a31f-8ec194d58a0f",
+      "day": "Mon",
+      "area_id": "area_wall_salad",
+      "start": "07:00",
+      "end": "11:00",
+      "required_count": 1
+    },
+    {
+      "id": "73af7ff0-a88c-4829-80fa-ada4f030d384",
+      "day": "Mon",
+      "area_id": "area_backroom",
+      "start": "07:00",
+      "end": "10:00",
+      "required_count": 1
+    },
+    {
+      "id": "f54bb86e-890f-44ea-9074-c9da0ef1cff3",
+      "day": "Tue",
+      "area_id": "area_front",
+      "start": "07:00",
+      "end": "09:00",
+      "required_count": 2
+    },
+    {
+      "id": "2144af63-f44b-49bb-9071-2f5d5c6b8cf1",
+      "day": "Tue",
+      "area_id": "area_dry_table",
+      "start": "07:00",
+      "end": "11:00",
+      "required_count": 2
+    },
+    {
+      "id": "bfbae429-ea44-49db-a07d-6fde1e566ea6",
+      "day": "Wed",
+      "area_id": "area_front",
+      "start": "07:00",
+      "end": "09:00",
+      "required_count": 3
+    }
+  ],
+  "availability": [
+    {
+      "id": "bc7de0f9-2ec7-4da3-b273-b6c8bcbfa6ee",
+      "member_id": "m_alice",
+      "day": "Mon",
+      "start": "07:00",
+      "end": "15:00"
+    },
+    {
+      "id": "d2f38de1-ede9-4a57-9a40-7312866e28f3",
+      "member_id": "m_alice",
+      "day": "Tue",
+      "start": "07:00",
+      "end": "15:00"
+    },
+    {
+      "id": "0e923d8a-4223-4e7a-8ed8-434fd9f07fc6",
+      "member_id": "m_alice",
+      "day": "Wed",
+      "start": "07:00",
+      "end": "15:00"
+    },
+    {
+      "id": "3fc9076b-e48e-432d-b15f-1c180a44a763",
+      "member_id": "m_bob",
+      "day": "Mon",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "id": "c2c75993-7926-4c13-a503-d0e5a11f90e7",
+      "member_id": "m_bob",
+      "day": "Tue",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "id": "29657d09-f9f7-49d7-9f1b-d3982ad57dc4",
+      "member_id": "m_charlie",
+      "day": "Mon",
+      "start": "11:00",
+      "end": "19:00"
+    }
+  ],
+  "shift_templates": [
+    {
+      "id": "addc938f-4534-47a3-b030-778a3e65131c",
+      "name": "Opening Shift (Early)",
+      "start": "06:00",
+      "end": "14:00",
+      "shift_class": "Opening",
+      "role_tags": [
+        "Produce Lead"
+      ]
+    },
+    {
+      "id": "3c144520-2cba-496d-93e7-5206c10443ca",
+      "name": "Opening Shift (Standard)",
+      "start": "07:00",
+      "end": "15:00",
+      "shift_class": "Opening",
+      "role_tags": [
+        "Produce Clerk"
+      ]
+    },
+    {
+      "id": "cf66664d-70eb-45ef-ac6b-095ac4d7d412",
+      "name": "Mid-Shift",
+      "start": "09:00",
+      "end": "17:00",
+      "shift_class": "Mid-Shift",
+      "role_tags": [
+        "Produce Clerk"
+      ]
+    },
+    {
+      "id": "ff3700f2-a894-45af-9ebc-53113faa0511",
+      "name": "Closing Shift",
+      "start": "14:00",
+      "end": "22:00",
+      "shift_class": "Closing",
+      "role_tags": [
+        "Produce Clerk"
+      ]
+    }
+  ],
+  "planned_shifts": [],
+  "shift_patterns": [],
+  "skills": [
+    {
+      "id": "skill_0",
+      "name": "Produce Lead"
+    },
+    {
+      "id": "skill_1",
+      "name": "Ordering"
+    },
+    {
+      "id": "skill_2",
+      "name": "Dry Table/Display"
+    },
+    {
+      "id": "skill_3",
+      "name": "Quality Checks"
+    },
+    {
+      "id": "skill_4",
+      "name": "Backroom Organization"
+    },
+    {
+      "id": "skill_5",
+      "name": "Freshpak Wall"
+    },
+    {
+      "id": "skill_6",
+      "name": "Salads-Juice Wall"
+    },
+    {
+      "id": "skill_7",
+      "name": "Mirror Wall"
+    },
+    {
+      "id": "skill_8",
+      "name": "Wet Rack/Herbs Wall"
+    },
+    {
+      "id": "skill_9",
+      "name": "Receiving & Breakdown"
+    },
+    {
+      "id": "skill_10",
+      "name": "Cutter/Prep"
+    },
+    {
+      "id": "skill_11",
+      "name": "IMS"
+    },
+    {
+      "id": "skill_12",
+      "name": "Signs/Ad Change"
+    },
+    {
+      "id": "skill_13",
+      "name": "Produce Clerk"
+    },
+    {
+      "id": "skill_14",
+      "name": "Truck Sorting"
+    },
+    {
+      "id": "skill_15",
+      "name": "Backroom Logistics"
+    }
+  ],
+  "member_skills": [
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_0"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_2"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_3"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_4"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_5"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_6"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_7"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_8"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_9"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_10"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_11"
+    },
+    {
+      "member_id": "m_alice",
+      "skill_id": "skill_12"
+    },
+    {
+      "member_id": "m_bob",
+      "skill_id": "skill_13"
+    },
+    {
+      "member_id": "m_bob",
+      "skill_id": "skill_2"
+    },
+    {
+      "member_id": "m_bob",
+      "skill_id": "skill_3"
+    },
+    {
+      "member_id": "m_bob",
+      "skill_id": "skill_4"
+    },
+    {
+      "member_id": "m_charlie",
+      "skill_id": "skill_13"
+    },
+    {
+      "member_id": "m_charlie",
+      "skill_id": "skill_8"
+    },
+    {
+      "member_id": "m_charlie",
+      "skill_id": "skill_6"
+    },
+    {
+      "member_id": "m_charlie",
+      "skill_id": "skill_3"
+    },
+    {
+      "member_id": "m_marlon",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_soloman",
+      "skill_id": "skill_14"
+    },
+    {
+      "member_id": "m_soloman",
+      "skill_id": "skill_15"
+    },
+    {
+      "member_id": "m_soloman",
+      "skill_id": "skill_4"
+    },
+    {
+      "member_id": "m_soloman",
+      "skill_id": "skill_9"
+    },
+    {
+      "member_id": "m_james",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_james",
+      "skill_id": "skill_5"
+    },
+    {
+      "member_id": "m_deb",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_deb",
+      "skill_id": "skill_6"
+    },
+    {
+      "member_id": "m_kenneth",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_william",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_william",
+      "skill_id": "skill_7"
+    },
+    {
+      "member_id": "m_sandra",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_sandra",
+      "skill_id": "skill_5"
+    },
+    {
+      "member_id": "m_beth",
+      "skill_id": "skill_1"
+    },
+    {
+      "member_id": "m_beth",
+      "skill_id": "skill_5"
+    },
+    {
+      "member_id": "m_heidi",
+      "skill_id": "skill_8"
+    },
+    {
+      "member_id": "m_john",
+      "skill_id": "skill_7"
+    },
+    {
+      "member_id": "m_nabil",
+      "skill_id": "skill_3"
+    },
+    {
+      "member_id": "m_barry",
+      "skill_id": "skill_3"
+    },
+    {
+      "member_id": "m_victoria",
+      "skill_id": "skill_3"
+    }
+  ],
+  "member_aliases": []
+}
