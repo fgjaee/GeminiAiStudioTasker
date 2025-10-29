@@ -203,33 +203,29 @@ export const supabaseMock = {
       delete: async (id: ID) => {
         await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
         console.log(`Mock DB: Deleting from ${tableName} with ID ${id}`);
-        const initialLength = mockDatabase[tableName].length;
+        
         (mockDatabase[tableName] as any) = (mockDatabase[tableName] as any[]).filter((r: any) => r.id !== id);
+        
         saveDatabaseToStorage(mockDatabase); // Persist changes
-
-        if (mockDatabase[tableName].length < initialLength) {
-          return { data: { id }, error: null };
-        }
-        return { data: null, error: new Error(`Record with ID ${id} not found in ${tableName}`) };
+        // Always return success, even if the item didn't exist. Deletion is idempotent.
+        return { data: null, error: null };
       },
       deleteMatch: async (query: object) => {
         await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
         console.log(`Mock DB: Deleting from ${tableName} with query`, query);
-        const initialLength = mockDatabase[tableName].length;
+        
         (mockDatabase[tableName] as any) = (mockDatabase[tableName] as any[]).filter((r: any) => {
           for (const key in query) {
             if (r[key] !== (query as any)[key]) {
-              return true; // Keep if it doesn't match
+              return true; // Keep: does not match query
             }
           }
-          return false; // Discard if all keys match
+          return false; // Discard: matches query
         });
+        
         saveDatabaseToStorage(mockDatabase); // Persist changes
-
-        if (mockDatabase[tableName].length < initialLength) {
-          return { error: null };
-        }
-        return { error: new Error(`Record with query ${JSON.stringify(query)} not found in ${tableName}`) };
+        // Always return success, even if no items matched. Deletion is idempotent.
+        return { data: null, error: null };
       },
     };
   },
