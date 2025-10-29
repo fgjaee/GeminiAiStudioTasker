@@ -1,8 +1,7 @@
-
 // src/services/parsers/pdfMeijerKronos.ts
 import { supabase } from '../supabaseClient';
 import type { ParsedScheduleShift } from '../../types';
-import { uuid } from '../utils';
+import { uuid } from '../../utils/helpers';
 
 /**
  * Client wrapper that POSTs an ArrayBuffer to the Supabase Edge Function

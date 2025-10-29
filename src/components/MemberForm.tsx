@@ -5,7 +5,7 @@ import Input from '../../components/Input';
 import ChipInput from '../../components/ChipInput';
 import Button from '../../components/Button';
 import Select from '../../components/Select';
-import { uuid } from '../services/utils';
+import { uuid } from '../../utils/helpers';
 
 interface MemberFormProps {
   member?: Member | null;

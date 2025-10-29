@@ -105,7 +105,8 @@ export const supabaseMock = {
   },
 
   // Mock Database Service
-  from: <T extends { id?: ID }>(tableName: SupabaseTableName) => {
+  // FIX: Removed generic constraint `extends { id?: ID }` to support tables without a single 'id' primary key, like 'member_skills'.
+  from: <T>(tableName: SupabaseTableName) => {
     return {
       select: async () => {
         await new Promise(resolve => setTimeout(resolve, MOCK_DB_DELAY));
@@ -144,8 +145,10 @@ export const supabaseMock = {
         console.log(`Mock DB: Upserting into ${tableName}`, recordsArray);
 
         recordsArray.forEach(record => {
-          if ('id' in record && !record.id) {
-            record.id = uuid(); // Assign ID if new
+          // FIX: Cast record to any to check for 'id' property without a generic constraint.
+          // Don't assign an ID to member_skills as it's a join table.
+          if (tableName !== 'member_skills' && typeof record === 'object' && record && 'id' in record && !(record as any).id) {
+            (record as any).id = uuid(); // Assign ID if new
           }
 
           // Apply normalization before storing to ensure consistency
@@ -173,13 +176,25 @@ export const supabaseMock = {
           }
 
           const table = mockDatabase[tableName] as any[];
-          // @ts-ignore
-          const index = 'id' in normalizedRecord ? table.findIndex((r: { id: string }) => r.id === normalizedRecord.id) : -1;
-
-          if (index > -1) {
-            table[index] = normalizedRecord;
+          
+          // FIX: Handle member_skills with a composite key (member_id, skill_id) for upsert logic.
+          if (tableName === 'member_skills') {
+            const msRecord = normalizedRecord as unknown as MemberSkill;
+            const index = (table as MemberSkill[]).findIndex(r => r.member_id === msRecord.member_id && r.skill_id === msRecord.skill_id);
+            if (index > -1) {
+              table[index] = normalizedRecord;
+            } else {
+              table.push(normalizedRecord);
+            }
           } else {
-            table.push(normalizedRecord);
+            const typedRecord = normalizedRecord as any;
+            const index = 'id' in typedRecord ? table.findIndex((r: { id: string }) => r.id === typedRecord.id) : -1;
+
+            if (index > -1) {
+              table[index] = normalizedRecord;
+            } else {
+              table.push(normalizedRecord);
+            }
           }
         });
         saveDatabaseToStorage(mockDatabase); // Persist changes

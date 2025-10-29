@@ -153,7 +153,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel, existingTas
       <ChipInput
         id="skill_ids"
         label="Required Skills (e.g., Ordering, Lifting)"
-        chips={formData.skill_ids as any[]}
+        chips={(formData.skill_ids as any[]) || []}
         onAddChip={chip => handleSkillChange([...(formData.skill_ids || []), chip])}
         onRemoveChip={chip => handleSkillChange((formData.skill_ids || []).filter(s => s !== chip))}
         placeholder="Add a skill..."

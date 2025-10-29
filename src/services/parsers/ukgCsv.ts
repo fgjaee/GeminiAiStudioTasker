@@ -1,7 +1,6 @@
-
 // src/services/parsers/ukgCsv.ts
 import Papa from 'papaparse';
-import { uuid, to24h, normName } from '../utils';
+import { uuid, to24h, normName } from '../../utils/helpers';
 import type { ParsedScheduleShift } from '../../types';
 
 const dayStr = (d: Date) => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()] as ParsedScheduleShift['day'];

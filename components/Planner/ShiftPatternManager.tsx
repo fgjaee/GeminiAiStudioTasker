@@ -1,6 +1,6 @@
 // components/Planner/ShiftPatternManager.tsx
 import React, { useState, useMemo, useCallback } from 'react';
-import { Member, ShiftPattern, PlannedShift, ID } from '../../types';
+import { Member, ShiftPattern, PlannedShift, ID } from '../types';
 import Button from '../Button';
 import Select from '../Select';
 import { Save, Copy, Trash2 } from 'lucide-react';
@@ -62,16 +62,17 @@ const ShiftPatternManager: React.FC<ShiftPatternManagerProps> = ({
   }, [selectedMemberId, members, plannedShifts, targetDates, onSavePattern, memberPattern]);
 
   const handleApplyPattern = useCallback(() => {
-    // FIX: Add a guard clause to ensure a member is selected. This also helps TypeScript narrow the type of selectedMemberId.
-    if (!selectedMemberId) {
+    // FIX: Use a local variable to help TypeScript with type narrowing inside the callback.
+    const currentMemberId = selectedMemberId;
+    if (!currentMemberId) {
         alert('Please select a member to apply the pattern to.');
         return;
     }
-    const memberId: ID = selectedMemberId;
     if (!memberPattern) {
         alert('No pattern saved for this member.');
         return;
     }
+    
     const dateMap = new Map(targetDates.map(d => [dayjs(d).format('ddd'), d]));
     const shiftsToCreate: Omit<PlannedShift, 'id'>[] = [];
 
@@ -79,7 +80,7 @@ const ShiftPatternManager: React.FC<ShiftPatternManagerProps> = ({
         const targetDate = dateMap.get(patternShift.day);
         if (targetDate) {
             shiftsToCreate.push({
-                member_id: memberId,
+                member_id: currentMemberId,
                 date: targetDate,
                 day: patternShift.day,
                 start: patternShift.start,

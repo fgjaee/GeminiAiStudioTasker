@@ -1,6 +1,6 @@
 // services/parsers/ukgXlsx.ts
 import { ParsedScheduleData, ParsedScheduleShift } from '../../types';
-import { uuid } from '../utils';
+import { uuid } from '../../utils/helpers';
 import dayjs from 'dayjs';
 
 /**

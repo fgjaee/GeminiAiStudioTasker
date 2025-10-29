@@ -1,4 +1,3 @@
-
 // components/MembersTab.tsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { Member, Skill, MemberAlias, MemberSkill, ID } from '../types';
@@ -7,7 +6,7 @@ import MemberForm from './MemberForm';
 import Modal from './Modal';
 import Input from './Input';
 import { Plus, Trash2, Pencil, Users, Star, Link2 } from 'lucide-react';
-import { assertUniqueKeys, normName, uuid } from '../services/utils';
+import { assertUniqueKeys, normName, uuid } from '../utils/helpers';
 import Select from './Select';
 import { useToast } from './Toast';
 
@@ -42,7 +41,8 @@ const PeopleManager: React.FC<MembersTabProps> = ({ members, skills, memberSkill
     const newSkillIds = new Set(skill_ids || []);
 
     const skillsToAdd = (skill_ids || []).filter(id => !existingSkillIds.has(id));
-    const skillsToRemove = Array.from(existingSkillIds).filter(id => !newSkillIds.has(id));
+    // FIX: Explicitly type 'id' to resolve 'unknown' type error.
+    const skillsToRemove = Array.from(existingSkillIds).filter((id: ID) => !newSkillIds.has(id));
 
     if (skillsToAdd.length > 0) {
       await onSaveMemberSkill(skillsToAdd.map(skill_id => ({ member_id: member.id, skill_id })));

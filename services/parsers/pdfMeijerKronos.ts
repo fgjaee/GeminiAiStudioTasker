@@ -1,7 +1,7 @@
 // services/parsers/pdfMeijerKronos.ts
 import { ParsedScheduleData, ParsedScheduleShift } from '../../types';
 import { DATE_FORMAT, PDF_MOCK_TIMEOUT } from '../../constants';
-import { uuid, normName, to24h, generateChecksum } from '../utils';
+import { uuid, normName, to24h, generateChecksum } from '../../utils/helpers';
 import dayjs from 'dayjs';
 
 /**

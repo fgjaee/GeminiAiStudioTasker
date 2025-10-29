@@ -4,7 +4,7 @@ import { Member, ID, ShiftClass, Skill, MemberSkill } from '../types';
 import Input from './Input';
 import ChipInput from './ChipInput';
 import Button from './Button';
-import { uuid } from '../services/utils';
+import { uuid } from '../utils/helpers';
 
 interface MemberFormProps {
   member?: Member | null;

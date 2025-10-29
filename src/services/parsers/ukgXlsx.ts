@@ -1,7 +1,6 @@
-
 // src/services/parsers/ukgXlsx.ts
 import { read, utils } from 'xlsx';
-import { uuid, to24h, normName } from '../utils';
+import { uuid, to24h, normName } from '../../utils/helpers';
 import type { ParsedScheduleShift } from '../../types';
 
 export async function parseUKGXlsx(file: File): Promise<ParsedScheduleShift[]> {

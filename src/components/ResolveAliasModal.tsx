@@ -1,4 +1,3 @@
-
 // components/ResolveAliasModal.tsx
 import React, { useState, useMemo } from 'react';
 import { Member, ID } from '../types';

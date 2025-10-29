@@ -1,13 +1,13 @@
-// components/TasksTab.tsx
+// src/components/TasksTab.tsx
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Task, Area, OrderSet, OrderSetItem, ID } from '../types';
-import Button from './Button';
+import Button from '../../components/Button';
 import TaskForm from './TaskForm';
-import Modal from './Modal';
-import Select from './Select';
+import Modal from '../../components/Modal';
+import Select from '../../components/Select';
 import { Plus, Trash2, Pencil, ClipboardList, ArrowUp, ArrowDown, Save, ShieldCheck } from 'lucide-react';
-import { assertUniqueKeys } from '../utils/helpers';
-import { useToast } from './Toast';
+import { assertUniqueKeys } from '../../utils/helpers';
+import { useToast } from '../../components/Toast';
 
 interface TasksTabProps {
   tasks: Task[];

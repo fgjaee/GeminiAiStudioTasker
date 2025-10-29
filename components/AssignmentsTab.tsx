@@ -3,7 +3,7 @@ import { Assignment, DailyWorkload, Task, Member, ManagerSettings, ID, WeeklySch
 import Button from './Button';
 import { Lock, Unlock, Zap, XCircle, AlertTriangle, Eye, EyeOff, Calendar, Pencil, ShieldAlert } from 'lucide-react';
 import dayjs from 'dayjs';
-import { calculateDuration, minutesToTime, timeToMinutes, assertUniqueKeys, getNextNDays } from '../services/utils';
+import { calculateDuration, minutesToTime, timeToMinutes, assertUniqueKeys, getNextNDays } from '../utils/helpers';
 import Input from './Input';
 import Modal from './Modal';
 import Select from './Select';

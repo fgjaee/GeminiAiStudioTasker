@@ -1,15 +1,15 @@
 // components/ScheduleTab.tsx
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleShift, ID, ShiftPattern, MemberAlias } from '../types';
+import { Member, WeeklyScheduleDay, ScheduleShift, ParsedScheduleShift, ID, ShiftPattern, MemberAlias, ParsedScheduleData } from '../types';
 import Button from './Button';
 import Modal from './Modal';
 import { Upload, AlertTriangle, Pencil } from 'lucide-react';
 import dayjs from 'dayjs';
 import { DATE_FORMAT, WEEKDAY_NAMES, SHORT_WEEKDAY_NAMES } from '../constants';
-import { uuid, getWeekDays, assertUniqueKeys, generateChecksum, timeToMinutes } from '../services/utils';
+import { uuid, getWeekDays, assertUniqueKeys, generateChecksum, timeToMinutes } from '../utils/helpers';
 import { importSchedule } from '../services/importSchedule';
 import ManualScheduleEditor from './ManualScheduleEditor';
-import ResolveAliasModal from '../src/components/ResolveAliasModal'; // Path might need adjustment
+import ResolveAliasModal from './ResolveAliasModal'; 
 import { useToast } from './Toast';
 
 interface ScheduleTabProps {
@@ -127,16 +127,16 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
     }
     setImporting(true); setImportError(null);
     try {
+      // FIX: The import function returns a ParsedScheduleData object, not an array of shifts directly.
       const parsedData = await importSchedule(selectedFile);
-      const parsedShifts = parsedData.shifts;
-      if (parsedShifts.length === 0) {
+      if (parsedData.shifts.length === 0) {
         addToast({ message: "No shifts were parsed. Opening manual editor.", type: 'info'});
         initialShiftsRef.current = [];
         setIsManualEditorOpen(true);
       } else {
-        addToast({ message: `Parsed ${parsedShifts.length} shifts. Resolving members...`, type: 'info'});
-        initialShiftsRef.current = parsedShifts;
-        processQueue(parsedShifts);
+        addToast({ message: `Parsed ${parsedData.shifts.length} shifts. Resolving members...`, type: 'info'});
+        initialShiftsRef.current = parsedData.shifts;
+        processQueue(parsedData.shifts);
       }
       setIsImportModalOpen(false);
     } catch (err) {
@@ -151,7 +151,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({
     await fetchData(); // Refetch data to update aliasMap
     
     // Continue processing after alias is saved and data is fresh
-    // We need to wait for the next render cycle for the new aliasMap to be available
     setTimeout(() => {
         const updatedQueue = unresolvedQueue.map(s => s.memberName === name ? { ...s, member_id: memberId } : s);
         processQueue(updatedQueue);

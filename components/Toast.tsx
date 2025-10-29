@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { XCircle, CheckCircle, Info } from 'lucide-react';
 import Button from './Button'; // Assuming Button is available
+import { uuid } from '../utils/helpers';
 
 interface ToastProps {
   id?: string; // Optional if not needed for direct interaction
@@ -10,6 +11,16 @@ interface ToastProps {
 }
 
 const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000); // Auto-dismiss after 5 seconds
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [onClose]);
+
   const icon = {
     success: <CheckCircle size={18} className="text-green-500" />,
     error: <XCircle size={18} className="text-red-500" />,
@@ -67,23 +78,12 @@ const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const addToast = useCallback((toast: Omit<ToastData, 'id'>) => {
-    const id = Date.now().toString(); // Simple unique ID
-    setToasts(prev => [...prev, { ...toast, id }]);
+    setToasts(prev => [...prev, { ...toast, id: uuid() }]);
   }, []);
 
   const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
-
-  // Auto-dismiss toasts after a few seconds
-  useEffect(() => {
-    if (toasts.length > 0) {
-      const timer = setTimeout(() => {
-        removeToast(toasts[0].id);
-      }, 5000); // 5 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [toasts, removeToast]);
 
   return (
     <ToastContext.Provider value={{ addToast }}>
