@@ -13,46 +13,39 @@ import {
   OrderSet,
   OrderSetItem,
   RecurrenceType,
+  Skill,
+  MemberSkill,
 } from '../types';
-// FIX: import `calculateDuration`, `timeToMinutes`, `minutesToTime`, and `uuid` from the correct path.
 import { calculateDuration, timeToMinutes, minutesToTime, uuid } from '../utils/helpers';
-import { WEEKDAY_NAMES, SHORT_WEEKDAY_NAMES } from '../constants'; // Import WEEKDAY_NAMES
+import { WEEKDAY_NAMES, SHORT_WEEKDAY_NAMES } from '../constants';
 
-// --- Input Interface for Assignment Engine ---
 export interface AssignmentEngineInput {
   members: Member[];
   tasks: Task[];
   explicitRules: ExplicitRule[];
   weeklySchedule: WeeklyScheduleDay[];
-  assignments: Assignment[]; // Existing locked assignments
+  assignments: Assignment[];
   settings: ManagerSettings;
-  targetDate: string; // YYYY-MM-DD for the day to generate assignments
-  orderSets: OrderSet[]; // Phase 2: All defined order sets
-  orderSetItems: OrderSetItem[]; // Phase 2: All defined order set items
+  targetDate: string;
+  orderSets: OrderSet[];
+  orderSetItems: OrderSetItem[];
+  skills: Skill[];
+  memberSkills: MemberSkill[];
 }
 
-// --- Output Interface for Assignment Engine ---
 export interface AssignmentEngineOutput {
   generatedAssignments: Assignment[];
   dailyWorkloads: DailyWorkload[];
-  unassignedTasks: (Task & { unassignedReason: string })[]; // Tasks that couldn't be assigned
+  unassignedTasks: (Task & { unassignedReason: string })[];
   overCapacityMembers: { memberId: string; name: string; date: string; overCapacity: number }[];
 }
 
-/**
- * Helper to get display name for a task (code + name)
- */
 export const getTaskDisplayName = (task: Task | undefined): string => {
   if (!task) return 'Unknown Task';
-  if (task.code) {
-    return `${task.code}: ${task.name}`;
-  }
+  if (task.code) return `${task.code}: ${task.name}`;
   return task.name;
 };
 
-/**
- * Calculates member capacity for a given day.
- */
 const getMemberCapacityForDay = (
   member: Member,
   scheduleDay: WeeklyScheduleDay | undefined,
@@ -65,24 +58,17 @@ const getMemberCapacityForDay = (
         totalShiftMinutes += calculateDuration(shift.start, shift.end);
       });
   }
-
   const availableWorkMinutes = totalShiftMinutes - (member.fixed_commitments_minutes || 0);
   return { totalShiftMinutes, availableWorkMinutes: Math.max(0, availableWorkMinutes) };
 };
 
-// --- Phase 3: Priority Scoring and Task Ordering ---
-
 const priorityScore = (task: Task, activePos: number | null, startTime: string): number => {
     const dueByTime = task.due_by && task.due_by.includes(':') ? timeToMinutes(task.due_by) : Infinity;
     const startTimeMinutes = timeToMinutes(startTime);
-    
     const isDueSoon = dueByTime !== Infinity && dueByTime <= startTimeMinutes + 180;
-
     const tCodeMatch = task.code?.match(/^T(\d+)/i);
     const tNumBonus = tCodeMatch ? Math.max(0, 10 - parseInt(tCodeMatch[1], 10)) : 0;
-    
     const base = activePos !== null ? Math.max(0, 100 - activePos) : 0;
-    
     return base + (task.priority_weight || 0) + (task.is_must_run ? 30 : 0) + (isDueSoon ? 15 : 0) + tNumBonus;
 };
 
@@ -103,17 +89,14 @@ const buildOrderedTasks = (
             ruleExclusionsByDay.get(rule.task_id)!.add(dayOfWeek);
         }
     });
-
     return tasks
         .filter(t => {
-            // Filter by recurrence, day, and explicit rule exclusions
             const isExcluded = ruleExclusionsByDay.get(t.id)?.has(dayOfWeek);
             if (isExcluded) return false;
-
             switch (t.recurrence_type) {
                 case 'daily': return true;
                 case 'weekly': return t.recurrence_detail === dayOfWeek;
-                default: return false; // Simplified for now
+                default: return false;
             }
         })
         .map(t => ({
@@ -123,10 +106,7 @@ const buildOrderedTasks = (
         }))
         .sort((a, b) => {
             const A = a.task, B = b.task;
-            // 1. Must Run first
             if ((A.is_must_run ?? false) !== (B.is_must_run ?? false)) return (B.is_must_run ? 1 : 0) - (A.is_must_run ? 1 : 0);
-            
-            // 2. Due by time
             const rankA = A.due_by && A.due_by.includes(':') ? 0 : (A.due_by === 'EOD' ? 1 : 2);
             const rankB = B.due_by && B.due_by.includes(':') ? 0 : (B.due_by === 'EOD' ? 1 : 2);
             if (rankA !== rankB) return rankA - rankB;
@@ -134,11 +114,7 @@ const buildOrderedTasks = (
                 const timeDiff = timeToMinutes(A.due_by) - timeToMinutes(B.due_by);
                 if (timeDiff !== 0) return timeDiff;
             }
-
-            // 3. Priority Score
             if (b.score !== a.score) return b.score - a.score;
-            
-            // 4. Tie-breakers
             const codeCompare = (A.code || '').localeCompare(B.code || '');
             if (codeCompare !== 0) return codeCompare;
             return (A.name || '').localeCompare(B.name || '');
@@ -146,46 +122,35 @@ const buildOrderedTasks = (
         .map(x => x.task);
 };
 
-
-/**
- * The core assignment engine.
- * Iterates through tasks and assigns them to members based on rules, skills, and availability.
- */
 export const generateAssignmentsMock = (input: AssignmentEngineInput): AssignmentEngineOutput => {
   const {
-    members,
-    tasks,
-    explicitRules,
-    weeklySchedule,
-    assignments: existingAssignments,
-    settings,
-    targetDate,
-    orderSets,
-    orderSetItems,
+    members, tasks, explicitRules, weeklySchedule, assignments: existingAssignments,
+    settings, targetDate, orderSets, orderSetItems, skills, memberSkills,
   } = input;
 
   console.log(`--- Assignment Engine Started for ${targetDate} ---`);
-
+  
   const rng = seedrandom(`${settings.tieBreakSeed}-${targetDate}`);
   const currentDayOfWeekFull = dayjs(targetDate).format('dddd');
-  // FIX: Use short day name for consistency with rules and recurrence data.
   const currentDayOfWeekShort = dayjs(targetDate).format('ddd') as 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
   const scheduleDay = weeklySchedule.find(sd => sd.date === targetDate);
 
-  // PASS 0: Validate schedule
   if (!scheduleDay || scheduleDay.shifts.length === 0) {
     console.warn(`[Pass 0] No scheduled members for ${targetDate}. Generator paused.`);
     const unassignedReason = "no_staff_today";
     return {
-      generatedAssignments: [],
-      dailyWorkloads: [],
-      unassignedTasks: tasks.map(t => ({ ...t, unassignedReason })),
-      overCapacityMembers: [],
+      generatedAssignments: [], dailyWorkloads: [],
+      unassignedTasks: tasks.map(t => ({ ...t, unassignedReason })), overCapacityMembers: [],
     };
   }
 
   const memberMap = new Map<string, Member>(members.map(m => [m.id, m]));
   const taskMap = new Map<string, Task>(tasks.map(t => [t.id, t]));
+  const memberSkillsMap = new Map<string, Set<string>>();
+  memberSkills.forEach(ms => {
+      if(!memberSkillsMap.has(ms.member_id)) memberSkillsMap.set(ms.member_id, new Set());
+      memberSkillsMap.get(ms.member_id)!.add(ms.skill_id);
+  });
 
   const dailyWorkloads = new Map<string, DailyWorkload>();
   members.forEach(member => {
@@ -199,54 +164,43 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
   let allAssignments: Assignment[] = [];
   const unassignedTasksMap = new Map<string, { task: Task, reasons: Set<string> }>();
 
-  // Process Locked Assignments
   const lockedAssignmentsForDay = existingAssignments.filter(a => a.locked && a.date === targetDate);
   lockedAssignmentsForDay.forEach(locked => {
     allAssignments.push(locked);
     const workload = dailyWorkloads.get(locked.memberId);
     if (workload) {
       const task = taskMap.get(locked.taskId);
-      if (task?.task_type === 'upkeep') {
-        workload.upkeepDuration += locked.duration;
-      } else {
-        workload.totalDuration += locked.duration;
-      }
+      if (task?.task_type === 'upkeep') workload.upkeepDuration += locked.duration;
+      else workload.totalDuration += locked.duration;
     }
   });
   const assignedTaskIds = new Set(allAssignments.map(a => a.taskId));
 
-  // Determine active Order Set and build ordered task list
   const activeOrderSet = orderSets.find(os => os.scope === 'global' || (os.scope === 'weekday' && os.weekday === currentDayOfWeekFull));
   const activeOrderSetItems = activeOrderSet ? orderSetItems.filter(i => i.order_set_id === activeOrderSet.id) : [];
   
   const orderedTasks = buildOrderedTasks(tasks, explicitRules, activeOrderSetItems, currentDayOfWeekShort, settings.assignmentStartTime)
     .filter(t => !assignedTaskIds.has(t.id));
 
-  // Main Assignment Loop (combines passes 1, 2, 3)
   for (const task of orderedTasks) {
     if (assignedTaskIds.has(task.id)) continue;
-
     let assigned = false;
-    
     const taskDuration = task.estimated_duration || 0;
-    // FIX: Rename taskId to task_id to match type definition
     const rule = explicitRules.find(r => r.task_id === task.id && !r.exclude_day?.includes(currentDayOfWeekShort));
 
-    if (!unassignedTasksMap.has(task.id)) {
-        unassignedTasksMap.set(task.id, { task, reasons: new Set() });
-    }
+    if (!unassignedTasksMap.has(task.id)) unassignedTasksMap.set(task.id, { task, reasons: new Set() });
     const unassignedReasons = unassignedTasksMap.get(task.id)!.reasons;
 
-    // General assignment logic
     const eligibleMembers = members.filter(member => {
       const workload = dailyWorkloads.get(member.id);
       if (!workload || workload.capacity <= 0) return false;
-      // FIX: Use skill_ids instead of skill_required and strengths
-      const memberSkillSet = new Set(member.skill_ids || []);
-      if ((task.skill_ids || []).some(skillId => !memberSkillSet.has(skillId))) {
+
+      const memberSkillSet = memberSkillsMap.get(member.id) || new Set<string>();
+      if ((task.skill_ids || []).length > 0 && !(task.skill_ids || []).every(requiredSkillId => memberSkillSet.has(requiredSkillId))) {
           unassignedReasons.add('no_skill');
           return false;
       }
+      
       if (task.task_type !== 'upkeep' && (workload.totalDuration + taskDuration > workload.capacity + settings.overCapacityThreshold)) {
           unassignedReasons.add('capacity_full');
           return false;
@@ -258,27 +212,20 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
       if(unassignedReasons.size === 0) unassignedReasons.add('no_skill_or_capacity');
       continue;
     }
-
-    // Sort by lowest workload
-    eligibleMembers.sort((a, b) => (dailyWorkloads.get(a.id)!.totalDuration) - (dailyWorkloads.get(b.id)!.totalDuration));
     
+    eligibleMembers.sort((a, b) => (dailyWorkloads.get(a.id)!.totalDuration) - (dailyWorkloads.get(b.id)!.totalDuration));
     const neededCoverage = task.min_coverage || (task.is_must_run ? 1 : 0);
     let assignedCoverage = 0;
 
     if (task.allow_multi_assign || neededCoverage > 1) {
-        // Handle slicing and multi-assign
-        // This is a simplified placeholder for the slicing logic
         for (const member of eligibleMembers) {
             if (assignedCoverage >= (neededCoverage || 1)) break;
             const workload = dailyWorkloads.get(member.id)!;
             if (task.task_type === 'upkeep' || (workload.totalDuration + taskDuration <= workload.capacity + settings.overCapacityThreshold)) {
                 const assignment = { id: uuid(), taskId: task.id, memberId: member.id, date: targetDate, startTime: task.earliest_start, endTime: minutesToTime(timeToMinutes(task.earliest_start) + taskDuration), duration: taskDuration, reason: "Assigned by skill and workload balance (coverage).", locked: false, status: 'assigned' as AssignmentStatus };
                 allAssignments.push(assignment);
-                if (task.task_type === 'upkeep') {
-                  workload.upkeepDuration += taskDuration;
-                } else {
-                  workload.totalDuration += taskDuration;
-                }
+                if (task.task_type === 'upkeep') workload.upkeepDuration += taskDuration;
+                else workload.totalDuration += taskDuration;
                 workload.assignedTasks.push(assignment);
                 assignedCoverage++;
                 assigned = true;
@@ -289,24 +236,20 @@ export const generateAssignmentsMock = (input: AssignmentEngineInput): Assignmen
         const workload = dailyWorkloads.get(assignedMember.id)!;
         const assignment = { id: uuid(), taskId: task.id, memberId: assignedMember.id, date: targetDate, startTime: task.earliest_start, endTime: minutesToTime(timeToMinutes(task.earliest_start) + taskDuration), duration: taskDuration, reason: "Assigned by skill and workload balance.", locked: false, status: 'assigned' as AssignmentStatus };
         allAssignments.push(assignment);
-        if (task.task_type === 'upkeep') {
-          workload.upkeepDuration += taskDuration;
-        } else {
-          workload.totalDuration += taskDuration;
-        }
+        if (task.task_type === 'upkeep') workload.upkeepDuration += taskDuration;
+        else workload.totalDuration += taskDuration;
         workload.assignedTasks.push(assignment);
         assigned = true;
     }
     
     if (assigned) {
         assignedTaskIds.add(task.id);
-        unassignedTasksMap.delete(task.id); // Remove from unassigned if successful
+        unassignedTasksMap.delete(task.id);
     } else if (unassignedReasons.size === 0) {
         unassignedReasons.add('capacity_full');
     }
   }
 
-  // Final Pass: Over-capacity Flagging
   const overCapacityMembersFinal: { memberId: string; name: string; date: string; overCapacity: number }[] = [];
   dailyWorkloads.forEach((workload, memberId) => {
     if (workload.totalDuration > workload.capacity) {

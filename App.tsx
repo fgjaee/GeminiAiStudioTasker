@@ -256,7 +256,7 @@ const AppContent: React.FC = () => {
     let newAssignments: Assignment[] = [], newDailyWorkloads: DailyWorkload[] = [], newUnassignedTasks: (Task & { unassignedReason: string; })[] = [], newOverCapacityMembers: any[] = [];
     const dates = getNextNDays(startDate, numberOfDays);
     for (const date of dates) {
-      const result = generateAssignmentsMock({ members, tasks, explicitRules, weeklySchedule, assignments: newAssignments.filter(a => a.locked), settings, targetDate: date, orderSets, orderSetItems });
+      const result = generateAssignmentsMock({ members, tasks, explicitRules, weeklySchedule, assignments: newAssignments.filter(a => a.locked), settings, targetDate: date, orderSets, orderSetItems, skills, memberSkills });
       newAssignments.push(...result.generatedAssignments); newDailyWorkloads.push(...result.dailyWorkloads);
       newUnassignedTasks.push(...result.unassignedTasks); newOverCapacityMembers.push(...result.overCapacityMembers);
     }
@@ -264,7 +264,7 @@ const AppContent: React.FC = () => {
     const nonLocked = newAssignments.filter(a => !a.locked);
     if (nonLocked.length > 0) await supabaseMock.from('assignments').upsert(nonLocked);
     await fetchData(); addToast({ message: 'Assignments generated!', type: 'success' }); setLoading(false);
-  }, [members, tasks, explicitRules, weeklySchedule, settings, orderSets, orderSetItems, fetchData, addToast]);
+  }, [members, tasks, explicitRules, weeklySchedule, settings, orderSets, orderSetItems, fetchData, addToast, skills, memberSkills]);
 
   const handleAutoFillWeek = useCallback(async (startDate: string, numberOfDays: number) => {
     setLoading(true);
