@@ -194,6 +194,12 @@ export type ParsedScheduleData = {
     membersCreated?: number;
     rowsDiscarded?: number;
     reason?: string;
+    parser?: string;
+    mode?: string;
+    warnings?: string[];
+    pagesProcessed?: number;
+    columnsDetected?: number;
+    textItemCount?: number;
   };
 };
 
